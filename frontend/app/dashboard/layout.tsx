@@ -29,6 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [time, setTime] = useState(new Date())
   const [user, setUser] = useState<any>(null)
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
@@ -73,11 +74,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isDark = theme === 'dark'
 
   return (
-    <div className={`flex h-screen overflow-hidden ${theme}`} style={{ background: isDark ? '#0f0f18' : '#f8fafc' }}>
+    <div className={`flex h-screen overflow-hidden dashboard-layout ${theme}`} style={{ background: isDark ? '#0f0f18' : '#f8fafc' }}>
+
+      {/* ─── Mobile Overlay ───────────────────────────────────────────────── */}
+      <div
+        className={`sidebar-overlay ${mobileOpen ? 'overlay-visible' : ''}`}
+        onClick={() => setMobileOpen(false)}
+      />
+
+      {/* ─── Mobile Hamburger Button ──────────────────────────────────────── */}
+      <button
+        id="sidebar-hamburger"
+        className="sidebar-hamburger"
+        style={{ position: 'fixed', top: '1rem', left: '1rem', zIndex: 60 }}
+        onClick={() => setMobileOpen(true)}
+        aria-label="Open navigation menu"
+      >
+        ☰
+      </button>
 
       {/* ─── Sidebar ─────────────────────────────────────────── */}
       <aside
-        className="flex flex-col transition-all duration-300 relative z-20"
+        className={`sidebar flex flex-col transition-all duration-300 relative z-20 ${mobileOpen ? 'sidebar-open' : ''}`}
         style={{
           width: collapsed ? '72px' : '260px',
           background: isDark ? 'rgba(13, 13, 22, 0.95)' : 'rgba(255, 255, 255, 0.95)',

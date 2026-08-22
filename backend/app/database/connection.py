@@ -15,6 +15,7 @@ from app.models.hospital import Patient, Doctor, Department
 from app.models.operations import Appointment, Bed, EmergencyCase
 from app.models.resources import Medicine, MedicineInventory, Equipment
 from app.models.finance import Bill, InsuranceClaim
+from app.models.laboratory import LabOrder
 
 
 class Database:
@@ -47,6 +48,7 @@ async def connect_to_mongo() -> None:
     print("Successfully connected to MongoDB Atlas!")
 
     # Initialize Beanie ODM with all document models
+    print("Initializing Beanie ODM with models...")
     await init_beanie(
         database=db.client[settings.DATABASE_NAME],
         document_models=[
@@ -54,9 +56,10 @@ async def connect_to_mongo() -> None:
             Patient, Doctor, Department,
             Appointment, Bed, EmergencyCase,
             Medicine, MedicineInventory, Equipment,
-            Bill, InsuranceClaim
+            Bill, InsuranceClaim, LabOrder
         ],
     )
+    print("Beanie ODM initialized successfully!")
 
 
 async def close_mongo_connection() -> None:

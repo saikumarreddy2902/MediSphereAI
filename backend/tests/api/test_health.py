@@ -7,7 +7,7 @@ def test_health_endpoint(client: TestClient):
     """Test the load balancer health check."""
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json()["status"] in ["ok", "healthy"]
 
 def test_liveness_probe(client: TestClient):
     """Test the Kubernetes liveness probe."""

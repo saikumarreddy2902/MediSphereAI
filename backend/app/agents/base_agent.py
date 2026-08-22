@@ -159,3 +159,90 @@ Format your response as structured JSON.
             "severity": severity,
             "timestamp": datetime.utcnow().isoformat(),
         }
+
+    async def query_llm_rag(self, current_data: Dict) -> AgentOutput:
+        """
+        Queries Ollama LLM augmented with historical context from Qdrant Vector DB.
+        """
+        from app.core.config import settings
+        from app.core.vector_store import vector_store
+        import httpx
+        import json
+
+        # 1. Search past insights in Qdrant
+        rag_context = ""
+        try:
+            hits = vector_store.search_documents("medisphere_knowledge", self.agent_name, limit=3)
+            if hits:
+                rag_context = "\n".join([f"- Past Finding: {hit['payload'].get('text_content', '')}" for hit in hits])
+        except Exception as e:
+            print(f"RAG search error: {e}")
+
+        # 2. Build prompt
+        prompt = self.build_prompt(current_data)
+        if rag_context:
+            prompt += f"\n\nHistorical Context from Vector Store:\n{rag_context}"
+
+        prompt += "\n\nCRITICAL: Respond ONLY with a valid JSON object. Do not include markdown codeblocks (like ```json), explanations, or trailing text."
+
+        recommendations = []
+        alerts = []
+        insights = {}
+
+        try:
+            # 3. Call Ollama (JSON Mode if supported or standard request)
+            # Use short timeout to avoid blocking execution loops
+            async with httpx.AsyncClient(timeout=8.0) as httpx_client:
+                response = await httpx_client.post(
+                    f"{settings.OLLAMA_BASE_URL}/api/generate",
+                    json={
+                        "model": settings.OLLAMA_MODEL,
+                        "prompt": prompt,
+                        "stream": False,
+                        "format": "json"
+                    }
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    response_text = result.get("response", "").strip()
+                    
+                    # Parse output JSON
+                    parsed = json.loads(response_text)
+                    recommendations = [self.format_recommendation(
+                        r.get("title", ""),
+                        r.get("description", ""),
+                        r.get("priority", "medium"),
+                        r.get("impact", "")
+                    ) for r in parsed.get("recommendations", [])]
+                    
+                    alerts = [self.format_alert(
+                        a.get("title", ""),
+                        a.get("message", ""),
+                        a.get("severity", "warning")
+                    ) for a in parsed.get("alerts", [])]
+                    
+                    insights = parsed.get("insights", {})
+                    
+                    # 4. Save new insights to Qdrant
+                    try:
+                        vector_store.upsert_document(
+                            "medisphere_knowledge",
+                            response_text,
+                            {"agent": self.agent_name, "category": self.category}
+                        )
+                    except Exception as e:
+                        print(f"RAG upsert error: {e}")
+                else:
+                    raise Exception(f"Ollama returned status code {response.status_code}")
+                    
+        except Exception as e:
+            print(f"Ollama execution failed for {self.agent_name}: {e}. Falling back to default heuristics.")
+            raise e
+
+        return AgentOutput(
+            agent_name=self.agent_name,
+            recommendations=recommendations,
+            alerts=alerts,
+            insights=insights
+        )

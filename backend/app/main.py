@@ -23,7 +23,7 @@ from app.api.v1 import (
     auth, patients, appointments, beds, emergency,
     staff, pharmacy, laboratory, equipment,
     billing, insurance, analytics, recommendations,
-    notifications, agents, dashboard, health
+    notifications, agents, dashboard, health, websocket
 )
 from app.agents.orchestrator import AgentOrchestrator
 
@@ -115,6 +115,7 @@ app.include_router(analytics.router,       prefix=f"{API_PREFIX}/analytics",    
 app.include_router(recommendations.router, prefix=f"{API_PREFIX}/recommendations", tags=["Recommendations"])
 app.include_router(notifications.router,   prefix=f"{API_PREFIX}/notifications",   tags=["Notifications"])
 app.include_router(agents.router,          prefix=f"{API_PREFIX}/agents",          tags=["AI Agents"])
+app.include_router(websocket.router,       prefix=f"{API_PREFIX}",                 tags=["WebSocket"])
 
 # ─── System Health & Root Endpoints ─────────────────────────────────────────
 

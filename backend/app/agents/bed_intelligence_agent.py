@@ -47,26 +47,36 @@ class BedIntelligenceAgent(BaseAgent):
             summary = get_bed_summary()
             summary["source"] = "Generator (Fallback)"
 
-        # Analyze ICU occupancy threshold
-        icu = summary.get("icu", {})
-        occupancy_rate = icu.get("occupancy_rate", 0)
+        # ─── LLM RAG Connection (with graceful fallback) ──────────────────────
+        try:
+            # Attempt to run semantic RAG analysis via Ollama LLM
+            output = await self.query_llm_rag({"bed_summary": summary})
+            # Ensure insights structure has summary
+            if not output.insights:
+                output.insights = {}
+            output.insights["bed_summary"] = summary
+            output.insights["bed_summary"]["source"] = "MongoDB + Ollama RAG"
+            return output
+        except Exception:
+            # Fall back to deterministic rule-based analysis
+            icu = summary.get("icu", {})
+            occupancy_rate = icu.get("occupancy_rate", 0)
 
-        if occupancy_rate > 90:
-            alerts.append(self.format_alert(
-                "ICU Near Critical Capacity",
-                f"ICU occupancy at {occupancy_rate}% — only {icu.get('available', 0)} beds available in MongoDB cluster.",
-                "critical"
-            ))
-            recommendations.append(self.format_recommendation(
-                "Initiate ICU Discharge & Step-down Protocol",
-                "Review stable ICU patients for transfer to general wards to free critical capacity.",
-                "critical", "Reclaim 3-4 ICU beds"
-            ))
+            if occupancy_rate > 90:
+                alerts.append(self.format_alert(
+                    "ICU Near Critical Capacity",
+                    f"ICU occupancy at {occupancy_rate}% — only {icu.get('available', 0)} beds available in MongoDB cluster.",
+                    "critical"
+                ))
+                recommendations.append(self.format_recommendation(
+                    "Initiate ICU Discharge & Step-down Protocol",
+                    "Review stable ICU patients for transfer to general wards to free critical capacity.",
+                    "critical", "Reclaim 3-4 ICU beds"
+                ))
 
-        return AgentOutput(
-            agent_name=self.agent_name,
-            recommendations=recommendations,
-            alerts=alerts,
-            insights={"bed_summary": summary}
-        )
-
+            return AgentOutput(
+                agent_name=self.agent_name,
+                recommendations=recommendations,
+                alerts=alerts,
+                insights={"bed_summary": summary}
+            )

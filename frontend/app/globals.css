@@ -212,7 +212,6 @@ h1, h2, h3, h4, h5, h6 {
 .stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
 .stagger-children > *:nth-child(8) { animation-delay: 0.40s; }
 
-/* ─── Recharts Custom ────────────────────────────────────────────────────────── */
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {
   stroke: rgba(255,255,255,0.04) !important;
@@ -223,3 +222,230 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 10px !important;
   backdrop-filter: blur(10px) !important;
 }
+
+/* ─── Loading Skeleton / Shimmer ─────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.loading-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.loading-bar {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.04) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+.h-3  { height: 0.75rem; }
+.h-4  { height: 1rem; }
+
+.loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.loading-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.loading-table-header {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+}
+
+.loading-table-row {
+  display: flex;
+  gap: 1rem;
+  padding: 0.875rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.loading-table-row:last-child {
+  border-bottom: none;
+}
+
+/* ─── Error Boundary Card ─────────────────────────────────────────────────────── */
+.error-boundary-card {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.error-boundary-icon {
+  font-size: 2.5rem;
+}
+
+.error-boundary-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fca5a5;
+}
+
+.error-boundary-message {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.error-boundary-retry {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.error-boundary-retry:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+/* ─── Mobile Responsiveness ──────────────────────────────────────────────────── */
+
+/* Sidebar mobile overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 40;
+}
+
+/* Hamburger button — hidden on desktop */
+.sidebar-hamburger {
+  display: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  /* Show hamburger on mobile */
+  .sidebar-hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Dashboard layout: single column on mobile */
+  .dashboard-layout {
+    flex-direction: column;
+  }
+
+  /* Sidebar slides in as a drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 260px;
+    height: 100vh;
+    z-index: 50;
+    transition: left 0.3s ease;
+  }
+
+  .sidebar.sidebar-open {
+    left: 0;
+  }
+
+  .sidebar-overlay.overlay-visible {
+    display: block;
+  }
+
+  /* Main content: full width */
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 1rem;
+  }
+
+  /* KPI grid: 2 cols then 1 col */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Charts grid: single column */
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Data tables: horizontal scroll */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 600px;
+  }
+
+  /* Cards: full width */
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Page header: stack vertically */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  /* Buttons: full width on mobile */
+  .btn-mobile-full {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Single column for very small screens */
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .loading-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

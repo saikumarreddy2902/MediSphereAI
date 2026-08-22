@@ -9,7 +9,7 @@ router = APIRouter()
 @router.get("/health")
 async def health_check():
     """Simple health check for load balancers."""
-    return {"status": "ok"}
+    return {"status": "healthy", "service": "MediSphere AI", "version": "1.0.0"}
 
 @router.get("/live")
 async def liveness_probe():

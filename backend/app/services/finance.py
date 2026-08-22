@@ -4,14 +4,8 @@ MediSphere AI — Finance Services (Billing & Insurance)
 from typing import List
 from fastapi import HTTPException, status
 from app.services.base import BaseService
-from app.repositories.core import BillRepository
-from app.repositories.base import BaseRepository
+from app.repositories.core import BillRepository, InsuranceClaimRepository
 from app.models.finance import Bill, InsuranceClaim
-
-
-class InsuranceClaimRepository(BaseRepository[InsuranceClaim]):
-    def __init__(self):
-        super().__init__(InsuranceClaim)
 
 
 class BillingService(BaseService[Bill]):

@@ -1,101 +1,243 @@
 'use client'
 import { useState } from 'react'
-import { Users, Search, Plus, UserCheck, Activity } from 'lucide-react'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell
+} from 'recharts'
+import {
+  Users, Activity, Bed, TrendingUp, TrendingDown, Clock,
+  UserPlus, UserMinus, AlertCircle, Search, Filter
+} from 'lucide-react'
+import { mockKPIs, mockHourlyFlow, mockDepartmentPerformance, formatNumber } from '@/lib/mock-data'
+
+const mockPatients = [
+  { id: 'P-0041', name: 'Rajesh Kumar',  age: 62, gender: 'Male',   diagnosis: 'Acute MI',              ward: 'ICU',          admDate: '18 Aug', los: 3, status: 'Critical',  doctor: 'Dr. Sharma' },
+  { id: 'P-0042', name: 'Priya Devi',    age: 45, gender: 'Female', diagnosis: 'Cerebrovascular Accident',ward: 'ICU',         admDate: '19 Aug', los: 2, status: 'Critical',  doctor: 'Dr. Mehta'  },
+  { id: 'P-0043', name: 'Arjun Singh',   age: 34, gender: 'Male',   diagnosis: 'Pneumonia',             ward: 'General',      admDate: '17 Aug', los: 4, status: 'Stable',    doctor: 'Dr. Rao'    },
+  { id: 'P-0044', name: 'Lakshmi N.',    age: 28, gender: 'Female', diagnosis: 'Appendectomy (Post-op)',  ward: 'Surgery',     admDate: '20 Aug', los: 1, status: 'Recovering',doctor: 'Dr. Nair'   },
+  { id: 'P-0045', name: 'Vikram P.',     age: 55, gender: 'Male',   diagnosis: 'Diabetic Ketoacidosis', ward: 'General',      admDate: '16 Aug', los: 5, status: 'Improving', doctor: 'Dr. Patel'  },
+  { id: 'P-0046', name: 'Sunita Rao',    age: 41, gender: 'Female', diagnosis: 'Hypertensive Crisis',   ward: 'Cardiology',   admDate: '19 Aug', los: 2, status: 'Stable',    doctor: 'Dr. Sharma' },
+  { id: 'P-0047', name: 'Mohammed A.',   age: 72, gender: 'Male',   diagnosis: 'Hip Fracture',          ward: 'Orthopedic',   admDate: '15 Aug', los: 6, status: 'Stable',    doctor: 'Dr. Iyer'   },
+  { id: 'P-0048', name: 'Deepa Gupta',   age: 23, gender: 'Female', diagnosis: 'Asthma Exacerbation',   ward: 'General',      admDate: '20 Aug', los: 1, status: 'Improving', doctor: 'Dr. Rao'    },
+  { id: 'P-0049', name: 'Suresh Iyer',   age: 48, gender: 'Male',   diagnosis: 'Cholecystitis',         ward: 'Surgery',      admDate: '18 Aug', los: 3, status: 'Pre-op',    doctor: 'Dr. Nair'   },
+  { id: 'P-0050', name: 'Ananya Menon',  age: 31, gender: 'Female', diagnosis: 'Antenatal care',        ward: 'Maternity',    admDate: '20 Aug', los: 1, status: 'Stable',    doctor: 'Dr. Rao'    },
+]
+
+const STATUS_STYLE: Record<string, { color: string; bg: string }> = {
+  Critical:   { color: '#ef4444', bg: 'rgba(239,68,68,0.12)'  },
+  Stable:     { color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+  Recovering: { color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+  Improving:  { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'Pre-op':   { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+}
+
+const WARD_COLORS: Record<string, string> = {
+  ICU: '#ef4444', General: '#3b82f6', Surgery: '#f97316',
+  Cardiology: '#f43f5e', Orthopedic: '#8b5cf6', Maternity: '#ec4899',
+}
+
+const wardDist = Object.entries(
+  mockPatients.reduce<Record<string, number>>((acc, p) => { acc[p.ward] = (acc[p.ward] || 0) + 1; return acc }, {})
+).map(([ward, count]) => ({ ward, count, color: WARD_COLORS[ward] || '#6366f1' }))
+
+const admissionTrend = mockHourlyFlow.slice(6, 18).map(h => ({
+  time: h.time,
+  admissions: h.registrations,
+  discharges: h.discharges,
+}))
 
 export default function PatientsPage() {
   const [search, setSearch] = useState('')
-  const patients = [
-    { id: 'PAT-8841', name: 'Eleanor Vance', age: 42, gender: 'Female', status: 'Admitted', ward: 'ICU-A', bed: 'BED-ICU-04', esi: 2 },
-    { id: 'PAT-8842', name: 'Marcus Brody', age: 58, gender: 'Male', status: 'Admitted', ward: 'General-B', bed: 'BED-GEN-12', esi: 3 },
-    { id: 'PAT-8843', name: 'Sophia Chen', age: 29, gender: 'Female', status: 'In Triage', ward: 'ER', bed: 'BED-ER-01', esi: 1 },
-  ]
+  const [statusFilter, setStatusFilter] = useState('ALL')
+  const [tab, setTab] = useState<'list' | 'flow' | 'analytics'>('list')
 
-  const filtered = patients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()))
+  const filtered = mockPatients.filter(p => {
+    const matchSearch = search === '' || p.name.toLowerCase().includes(search.toLowerCase()) || p.diagnosis.toLowerCase().includes(search.toLowerCase())
+    const matchStatus = statusFilter === 'ALL' || p.status === statusFilter
+    return matchSearch && matchStatus
+  })
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">Patient Flow & Census</h2>
-          <p className="text-xs text-slate-400">Real-time patient telemetry and ward placement</p>
+          <h2 className="text-xl font-bold tracking-tight text-slate-100">Patient Flow &amp; Management</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Real-time inpatient census, admission pipeline, and discharge optimization</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-            <input
-              type="text"
-              placeholder="Search patient or MRN..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-indigo-500 text-slate-200"
-            />
+        <div className="flex gap-2">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
+               style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <Users size={13} /> {mockKPIs.patients_today} patients today
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/20">
-            <Plus size={16} /> Admit Patient
+        </div>
+      </div>
+
+      {/* KPI Strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
+        {[
+          { label: 'Patients Today',   value: mockKPIs.patients_today,   icon: <Users size={18} />,     color: '#6366f1' },
+          { label: 'Admissions Today', value: mockKPIs.admissions_today, icon: <UserPlus size={18} />,  color: '#10b981' },
+          { label: 'Discharges Today', value: mockKPIs.discharges_today, icon: <UserMinus size={18} />, color: '#3b82f6' },
+          { label: 'Avg Wait Time',    value: `${mockKPIs.average_waiting_time}m`, icon: <Clock size={18} />, color: '#f59e0b' },
+        ].map(k => (
+          <div key={k.label} className="kpi-card" style={{ '--accent-color': k.color } as any}>
+            <div className="p-2 rounded-xl mb-2 w-fit" style={{ background: `${k.color}15`, color: k.color }}>{k.icon}</div>
+            <div className="text-3xl font-bold text-slate-100">{k.value}</div>
+            <div className="text-xs uppercase tracking-wider text-slate-500 mt-1">{k.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tab Bar */}
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        {(['list', 'flow', 'analytics'] as const).map(t => (
+          <button key={t} id={`patients-tab-${t}`} onClick={() => setTab(t)}
+            className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+            style={{ background: tab === t ? 'rgba(99,102,241,0.2)' : 'transparent', color: tab === t ? '#818cf8' : '#64748b', border: tab === t ? '1px solid rgba(99,102,241,0.25)' : '1px solid transparent' }}>
+            {t === 'list' ? '🏥 Inpatient Census' : t === 'flow' ? '📊 Patient Flow' : '📈 Analytics'}
           </button>
-        </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass-card p-4 flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-400"><Users size={24} /></div>
-          <div>
-            <div className="text-2xl font-bold">342</div>
-            <div className="text-xs text-slate-400">Total Inpatients</div>
+      {/* Patient List */}
+      {tab === 'list' && (
+        <div className="space-y-3 animate-scale-in">
+          {/* Search + Filter */}
+          <div className="flex gap-3 flex-wrap">
+            <div className="flex-1 min-w-48 flex items-center gap-2 px-3 py-2 rounded-xl"
+                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <Search size={14} className="text-slate-500 flex-shrink-0" />
+              <input id="patient-search" type="text" placeholder="Search patient or diagnosis…" value={search}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                className="flex-1 bg-transparent text-xs text-slate-200 placeholder-slate-600 outline-none" />
+            </div>
+            <div className="flex gap-1.5">
+              {['ALL', 'Critical', 'Stable', 'Improving', 'Recovering', 'Pre-op'].map(s => (
+                <button key={s} id={`patient-status-${s}`} onClick={() => setStatusFilter(s)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  style={{
+                    background: statusFilter === s ? (STATUS_STYLE[s]?.bg || 'rgba(99,102,241,0.15)') : 'rgba(255,255,255,0.04)',
+                    color: statusFilter === s ? (STATUS_STYLE[s]?.color || '#818cf8') : '#64748b',
+                    border: `1px solid ${statusFilter === s ? (STATUS_STYLE[s]?.color || '#818cf8') + '40' : 'rgba(255,255,255,0.06)'}`,
+                  }}>
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="glass-card p-4 flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400"><UserCheck size={24} /></div>
-          <div>
-            <div className="text-2xl font-bold">28</div>
-            <div className="text-xs text-slate-400">Discharges Scheduled</div>
-          </div>
-        </div>
-        <div className="glass-card p-4 flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-rose-500/10 text-rose-400"><Activity size={24} /></div>
-          <div>
-            <div className="text-2xl font-bold">14</div>
-            <div className="text-xs text-slate-400">Active ER Transfers</div>
-          </div>
-        </div>
-      </div>
 
-      <div className="glass-card overflow-hidden">
-        <table className="w-full data-table">
-          <thead>
-            <tr>
-              <th>MRN</th>
-              <th>Patient Name</th>
-              <th>Age / Gender</th>
-              <th>ESI Level</th>
-              <th>Assigned Ward</th>
-              <th>Bed</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(p => (
-              <tr key={p.id}>
-                <td className="font-mono text-indigo-400">{p.id}</td>
-                <td className="font-medium text-slate-200">{p.name}</td>
-                <td>{p.age} y/o ({p.gender})</td>
-                <td>
-                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${p.esi === 1 ? 'bg-red-500/20 text-red-400' : p.esi === 2 ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                    ESI-{p.esi}
-                  </span>
-                </td>
-                <td>{p.ward}</td>
-                <td>{p.bed}</td>
-                <td>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300">
-                    {p.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          <div className="glass-card overflow-hidden">
+            <table className="w-full data-table">
+              <thead>
+                <tr><th>Patient ID</th><th>Name</th><th>Age</th><th>Diagnosis</th><th>Ward</th><th>Admitted</th><th>LOS</th><th>Status</th><th>Doctor</th></tr>
+              </thead>
+              <tbody>
+                {filtered.map(p => {
+                  const ss = STATUS_STYLE[p.status] || { color: '#94a3b8', bg: 'rgba(255,255,255,0.05)' }
+                  return (
+                    <tr key={p.id}>
+                      <td className="font-mono text-indigo-400 text-xs">{p.id}</td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                               style={{ background: p.gender === 'Male' ? '#3b82f6' : '#ec4899' }}>
+                            {p.name.split(' ').map(n => n[0]).join('').slice(0,2)}
+                          </div>
+                          <span className="font-medium text-slate-100 text-xs">{p.name}</span>
+                        </div>
+                      </td>
+                      <td className="text-slate-400">{p.age}</td>
+                      <td className="text-slate-300 text-xs max-w-[160px] truncate">{p.diagnosis}</td>
+                      <td>
+                        <span className="text-xs px-2 py-0.5 rounded font-medium"
+                              style={{ background: `${WARD_COLORS[p.ward] || '#6366f1'}15`, color: WARD_COLORS[p.ward] || '#818cf8' }}>
+                          {p.ward}
+                        </span>
+                      </td>
+                      <td className="text-slate-400 text-xs">{p.admDate}</td>
+                      <td>
+                        <span className={p.los > 4 ? 'text-amber-400 font-semibold' : 'text-slate-400'}>{p.los}d</span>
+                      </td>
+                      <td>
+                        <span className="text-xs px-2 py-0.5 rounded font-semibold"
+                              style={{ background: ss.bg, color: ss.color }}>{p.status}</span>
+                      </td>
+                      <td className="text-slate-400 text-xs">{p.doctor}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Flow Tab */}
+      {tab === 'flow' && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 animate-scale-in">
+          <div className="xl:col-span-2 glass-card p-5">
+            <h3 className="text-sm font-semibold text-slate-200 mb-4">Hourly Admission vs Discharge Flow (Today)</h3>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={admissionTrend} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
+                <defs>
+                  {[['adm','#6366f1'],['dis','#10b981']].map(([id,c])=>(
+                    <linearGradient key={id} id={`pg-${id}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={c} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={c} stopOpacity={0}/>
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="time" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} />
+                <Tooltip contentStyle={{ background: 'rgba(15,15,24,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10 }} />
+                <Area type="monotone" dataKey="admissions" name="Admissions" stroke="#6366f1" fill="url(#pg-adm)" strokeWidth={2} />
+                <Area type="monotone" dataKey="discharges"  name="Discharges"  stroke="#10b981" fill="url(#pg-dis)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Ward distribution */}
+          <div className="glass-card p-5">
+            <h3 className="text-sm font-semibold text-slate-200 mb-4">Patients by Ward</h3>
+            <div className="flex justify-center mb-3">
+              <PieChart width={160} height={160}>
+                <Pie data={wardDist} cx={80} cy={80} innerRadius={40} outerRadius={72} dataKey="count" paddingAngle={3}>
+                  {wardDist.map((d, i) => <Cell key={i} fill={d.color} />)}
+                </Pie>
+                <Tooltip contentStyle={{ background: 'rgba(15,15,24,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10 }} />
+              </PieChart>
+            </div>
+            <div className="space-y-2">
+              {wardDist.map(d => (
+                <div key={d.ward} className="flex items-center gap-2 text-xs">
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.color }} />
+                  <span className="flex-1 text-slate-400">{d.ward}</span>
+                  <span className="font-bold text-slate-200">{d.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Tab */}
+      {tab === 'analytics' && (
+        <div className="glass-card p-5 animate-scale-in">
+          <h3 className="text-sm font-semibold text-slate-200 mb-4">Department Performance — Patient Satisfaction &amp; Efficiency</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={mockDepartmentPerformance} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <XAxis dataKey="department" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} />
+              <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} domain={[60, 100]} />
+              <Tooltip contentStyle={{ background: 'rgba(15,15,24,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10 }} />
+              <Bar dataKey="efficiency_score"     name="Efficiency Score"     fill="#6366f1" radius={[3,3,0,0]} />
+              <Bar dataKey="patient_satisfaction" name="Patient Satisfaction" fill="#10b981" radius={[3,3,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   )
 }
