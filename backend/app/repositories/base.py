@@ -34,7 +34,7 @@ class BaseRepository(Generic[T]):
         """Get a single document by a specific field."""
         return await self.model.find_one({field: value})
 
-    async def get_multi(self, skip: int = 0, limit: int = 100, query: dict = None) -> List[T]:
+    async def get_multi(self, skip: int = 0, limit: int = 100, query: Optional[dict] = None) -> List[T]:
         """Get multiple documents with pagination and optional query filter."""
         find_query = self.model.find(query or {})
         return await find_query.skip(skip).limit(limit).to_list()
@@ -52,14 +52,17 @@ class BaseRepository(Generic[T]):
         return await db_obj.save()
 
     async def delete(self, id: str) -> bool:
-        """Soft delete a document (sets status to DELETED)."""
+        """Soft delete a document (sets status to DELETED if status attribute exists, else deletes)."""
         doc = await self.get(id)
         if doc:
-            doc.status = "DELETED"
-            await doc.save()
+            if hasattr(doc, "status"):
+                setattr(doc, "status", "DELETED")
+                await doc.save()
+            else:
+                await doc.delete()
             return True
         return False
 
-    async def count(self, query: dict = None) -> int:
+    async def count(self, query: Optional[dict] = None) -> int:
         """Count documents matching a query."""
         return await self.model.find(query or {}).count()

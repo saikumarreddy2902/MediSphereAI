@@ -6,7 +6,7 @@ Connects to MongoDB Atlas and populates collections with realistic seed data.
 import asyncio
 import random
 import uuid
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from faker import Faker
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from beanie import init_beanie
@@ -21,6 +21,10 @@ from app.models.operations import Appointment, Bed, EmergencyCase
 from app.models.resources import Medicine, MedicineInventory, Equipment
 from app.models.finance import Bill, InsuranceClaim
 from app.models.laboratory import LabOrder
+from app.models.medical_record import MedicalRecord
+from app.models.prescription import Prescription
+from app.models.notification import Notification
+from app.models.audit import AuditLog
 
 # Import mock data helpers
 from app.mock.data_generator import (
@@ -51,13 +55,14 @@ async def seed_database():
 
     # Initialize Beanie ODM
     await init_beanie(
-        database=db,
+        database=db,  # type: ignore[arg-type]
         document_models=[
             User, Role, Permission,
             Patient, Doctor, Department,
             Appointment, Bed, EmergencyCase,
             Medicine, MedicineInventory, Equipment,
-            Bill, InsuranceClaim, LabOrder
+            Bill, InsuranceClaim, LabOrder,
+            MedicalRecord, Prescription, Notification, AuditLog
         ],
     )
     
@@ -100,17 +105,47 @@ async def seed_database():
     for r in roles:
         await r.insert()
 
-    print("Seeding Default Admin User...")
-    admin_user = User(
-        username="admin",
-        email="admin@medisphere.com",
-        hashed_password=get_password_hash("admin123"),
-        full_name="MediSphere Admin User",
-        roles=["admin"],
-        is_active=True,
-        is_superuser=True
-    )
-    await admin_user.insert()
+    print("Seeding Default Users (admin, doctor, nurse, patient)...")
+    demo_users = [
+        User(
+            username="admin",
+            email="admin@medisphere.com",
+            hashed_password=get_password_hash("admin123"),
+            full_name="MediSphere Admin User",
+            roles=["admin"],
+            is_active=True,
+            is_superuser=True
+        ),
+        User(
+            username="doctor",
+            email="doctor@medisphere.com",
+            hashed_password=get_password_hash("doctor123"),
+            full_name="Dr. Kavya Reddy",
+            roles=["doctor"],
+            is_active=True,
+            is_superuser=False
+        ),
+        User(
+            username="nurse",
+            email="nurse@medisphere.com",
+            hashed_password=get_password_hash("nurse123"),
+            full_name="Nurse Anjali Rao",
+            roles=["nurse"],
+            is_active=True,
+            is_superuser=False
+        ),
+        User(
+            username="patient",
+            email="patient@medisphere.com",
+            hashed_password=get_password_hash("patient123"),
+            full_name="Arjun Mehta",
+            roles=["patient"],
+            is_active=True,
+            is_superuser=False
+        ),
+    ]
+    for u in demo_users:
+        await u.insert()
 
     # ─── Seed Departments ────────────────────────────────────────────────────
     print("Seeding Departments...")
@@ -360,6 +395,74 @@ async def seed_database():
         )
         await db_appt.insert()
 
+    # ─── Seed Medical Records ────────────────────────────────────────────────
+    print("Seeding Medical Records...")
+    sample_records = [
+        {"type": "DIAGNOSIS", "title": "Primary Hypertension", "description": "Stage 2 essential hypertension confirmed. BP 150/95 mmHg.", "icd": "I10", "severity": "MODERATE"},
+        {"type": "ALLERGY", "title": "Penicillin Allergy", "description": "Anaphylactoid reaction noted in 2021. Avoid beta-lactams.", "icd": "Z88.0", "severity": "HIGH"},
+        {"type": "SURGERY", "title": "Laparoscopic Appendectomy", "description": "Uncomplicated appendectomy performed under general anesthesia.", "icd": "0DTJ4ZZ", "severity": "LOW"},
+        {"type": "LAB_RESULT", "title": "HbA1c Glycated Hemoglobin", "description": "HbA1c level 7.2% indicates sub-optimal glycemic control.", "icd": "E11.9", "severity": "MODERATE"},
+        {"type": "VITAL_SIGN", "title": "Routine Vitals Assessment", "description": "HR 78 bpm, SpO2 98%, Temp 98.4F, RR 16 breaths/min.", "icd": "R00-R99", "severity": "NORMAL"},
+    ]
+    for pid in patient_ids[:15]:
+        rec_data = rng.choice(sample_records)
+        db_rec = MedicalRecord(
+            patient_id=pid,
+            record_type=rec_data["type"],
+            title=rec_data["title"],
+            description=rec_data["description"],
+            icd_code=rec_data["icd"],
+            severity=rec_data["severity"],
+            doctor_id=rng.choice(doctor_ids),
+            date_of_record=(datetime.now() - timedelta(days=rng.randint(1, 60))).date(),
+            is_active=True
+        )
+        await db_rec.insert()
+
+    # ─── Seed Prescriptions ──────────────────────────────────────────────────
+    print("Seeding Prescriptions...")
+    common_meds = [
+        {"medicine_name": "Amoxicillin 500mg", "dosage": "500mg", "frequency": "Every 8 hours", "duration_days": 7, "route": "ORAL"},
+        {"medicine_name": "Metformin 500mg", "dosage": "500mg", "frequency": "Twice daily with meals", "duration_days": 30, "route": "ORAL"},
+        {"medicine_name": "Atorvastatin 20mg", "dosage": "20mg", "frequency": "Once daily at bedtime", "duration_days": 30, "route": "ORAL"},
+        {"medicine_name": "Lisinopril 10mg", "dosage": "10mg", "frequency": "Once daily morning", "duration_days": 30, "route": "ORAL"},
+        {"medicine_name": "Paracetamol 650mg", "dosage": "650mg", "frequency": "Every 6 hours PRN", "duration_days": 5, "route": "ORAL"},
+    ]
+    for pid in patient_ids[:12]:
+        p_meds = rng.sample(common_meds, k=rng.randint(1, 3))
+        p_status = rng.choice(["ACTIVE", "ACTIVE", "DISPENSED", "RENEWED"])
+        db_rx = Prescription(
+            patient_id=pid,
+            doctor_id=rng.choice(doctor_ids),
+            medications=p_meds,
+            diagnosis="Standard clinical outpatient prescription",
+            status=p_status,
+            is_renewable=True,
+            renewal_count=1 if p_status == "RENEWED" else 0,
+            issued_at=datetime.now(timezone.utc) - timedelta(days=rng.randint(1, 10)),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            notes="Follow dosage strictly. Drink plenty of water."
+        )
+        await db_rx.insert()
+
+    # ─── Seed Notifications ──────────────────────────────────────────────────
+    print("Seeding Notifications...")
+    notif_samples = [
+        {"title": "Critical Lab Result", "message": "Potassium level critical (6.2 mEq/L) for Patient in ICU-01", "type": "critical"},
+        {"title": "Low Inventory Alert", "message": "Amoxicillin stock below minimum safety threshold (12 packs remaining)", "type": "warning"},
+        {"title": "Bed Allocation Update", "message": "Emergency Bed E-04 freed up after patient discharge", "type": "info"},
+        {"title": "Prescription Ready", "message": "Prescription #RX-8821 dispensed and ready for collection", "type": "info"},
+    ]
+    for notif in notif_samples:
+        db_notif = Notification(
+            title=notif["title"],
+            message=notif["message"],
+            notification_type=notif["type"],
+            is_read=rng.choice([True, False]),
+            created_at=datetime.now(timezone.utc) - timedelta(minutes=rng.randint(5, 300))
+        )
+        await db_notif.insert()
+
     print("==================================================")
     print(" DATABASE SEEDING COMPLETED SUCCESSFULY!")
     print(" Seeded:")
@@ -374,6 +477,9 @@ async def seed_database():
     print(f"  - Insurance Claims: {await InsuranceClaim.count()}")
     print(f"  - Lab Orders: {await LabOrder.count()}")
     print(f"  - Appointments: {await Appointment.count()}")
+    print(f"  - Medical Records: {await MedicalRecord.count()}")
+    print(f"  - Prescriptions: {await Prescription.count()}")
+    print(f"  - Notifications: {await Notification.count()}")
     print("==================================================")
 
 if __name__ == "__main__":

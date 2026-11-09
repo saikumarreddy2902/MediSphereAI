@@ -28,12 +28,21 @@ DEPARTMENTS = [
     {"id": "dept-012", "name": "Pharmacy",          "floor": 1, "bed_capacity": 0,  "color": "#fb923c"},
     {"id": "dept-013", "name": "Radiology",         "floor": 2, "bed_capacity": 0,  "color": "#a78bfa"},
     {"id": "dept-014", "name": "Outpatient",        "floor": 1, "bed_capacity": 0,  "color": "#60a5fa"},
+    {"id": "dept-015", "name": "Nephrology",        "floor": 5, "bed_capacity": 20, "color": "#06b6d4"},
+    {"id": "dept-016", "name": "Pulmonology",       "floor": 4, "bed_capacity": 20, "color": "#14b8a6"},
+    {"id": "dept-017", "name": "Gastroenterology",  "floor": 3, "bed_capacity": 20, "color": "#eab308"},
+    {"id": "dept-018", "name": "Ophthalmology",     "floor": 2, "bed_capacity": 15, "color": "#a855f7"},
+    {"id": "dept-019", "name": "Psychiatry",        "floor": 6, "bed_capacity": 25, "color": "#ec4899"},
 ]
 
 DOCTOR_SPECIALIZATIONS = [
     "Emergency Medicine", "Intensive Care", "General Medicine", "Surgery",
     "Pediatrics", "Cardiology", "Orthopedics", "Gynecology", "Neurology", "Oncology",
+    "Nephrology & Renal Transplant", "Pulmonology & Critical Care",
+    "Gastroenterology & Hepatology", "Ophthalmology & Vitreoretinal",
+    "Psychiatry & Behavioral Health",
 ]
+
 
 MEDICINES = [
     {"code": "MED-001", "name": "Paracetamol 500mg",       "category": "Analgesic",      "stock": 2400, "min": 500,  "cost": 2.50},
@@ -69,7 +78,13 @@ EQUIPMENT_LIST = [
     {"id": "EQ-013", "name": "Anesthesia Machine",    "category": "Anesthesia",     "dept": "Surgery",      "utilization": 50, "status": "operational",  "risk": 0.08},
     {"id": "EQ-014", "name": "Blood Gas Analyzer",    "category": "Laboratory",     "dept": "Laboratory",   "utilization": 72, "status": "operational",  "risk": 0.14},
     {"id": "EQ-015", "name": "Endoscopy System",      "category": "Endoscopy",      "dept": "Surgery",      "utilization": 55, "status": "faulty",       "risk": 0.75},
+    {"id": "EQ-016", "name": "Hemodialysis Array",    "category": "Renal",          "dept": "Nephrology",   "utilization": 88, "status": "operational",  "risk": 0.10},
+    {"id": "EQ-017", "name": "Bronchoscopy Video Cart","category": "Pulmonary",     "dept": "Pulmonology",  "utilization": 64, "status": "operational",  "risk": 0.12},
+    {"id": "EQ-018", "name": "HD Colonoscopy Suite",  "category": "Endoscopy",      "dept": "Gastroenterology","utilization": 76,"status": "operational", "risk": 0.09},
+    {"id": "EQ-019", "name": "Phacoemulsifier & OCT", "category": "Ophthalmic",     "dept": "Ophthalmology","utilization": 58, "status": "operational",  "risk": 0.08},
+    {"id": "EQ-020", "name": "TMS Neuromodulator",    "category": "Neuromodulation","dept": "Psychiatry",    "utilization": 42, "status": "operational",  "risk": 0.05},
 ]
+
 
 LAB_TESTS = [
     {"code": "LAB-CBC", "name": "Complete Blood Count",    "category": "Hematology",    "turnaround": 1.5, "cost": 250},

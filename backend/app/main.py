@@ -16,15 +16,22 @@ import uvicorn
 from app.core.config import settings
 from app.database.connection import connect_to_mongo, close_mongo_connection
 from app.core.logging import setup_logging
+from app.core.cache import cache
 from app.middleware.logging_middleware import RequestLoggingMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.middleware.rate_limit import limiter
 from app.core.exceptions import global_exception_handler
 from app.core.telemetry import metrics_collector, metrics_middleware
+from slowapi import _rate_limit_exceeded_handler  # type: ignore[import-untyped]
+from slowapi.errors import RateLimitExceeded  # type: ignore[import-untyped]
 from app.api.v1 import (
     auth, patients, appointments, beds, emergency,
     staff, pharmacy, laboratory, equipment,
     billing, insurance, analytics, recommendations,
-    notifications, agents, dashboard, health, websocket
+    notifications, agents, dashboard, health, websocket,
+    medical_records, prescriptions, work_queues, audit, vitals
 )
+
 from app.agents.orchestrator import AgentOrchestrator
 
 # ─── Lifespan Lifecycle Management ──────────────────────────────────────────
@@ -49,6 +56,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Establish MongoDB connection via Motor & Beanie ODM
     await connect_to_mongo()
 
+    # Connect Redis cache (gracefully degrades if unavailable)
+    await cache.connect()
+
     # Start background multi-agent orchestrator loop
     orchestrator = AgentOrchestrator()
     app.state.orchestrator = orchestrator
@@ -60,6 +70,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Clean up resources on shutdown
     print("MediSphere AI shutting down...")
     await orchestrator.stop()
+    await cache.disconnect()
     await close_mongo_connection()
 
 
@@ -77,6 +88,13 @@ app = FastAPI(
 
 # Register global catch-all exception handler
 app.add_exception_handler(Exception, global_exception_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
+# Attach slowapi rate limiter state to app
+app.state.limiter = limiter
+
+# Security headers on every response
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Custom request logging and telemetry middleware
 app.add_middleware(RequestLoggingMiddleware)
@@ -116,6 +134,13 @@ app.include_router(recommendations.router, prefix=f"{API_PREFIX}/recommendations
 app.include_router(notifications.router,   prefix=f"{API_PREFIX}/notifications",   tags=["Notifications"])
 app.include_router(agents.router,          prefix=f"{API_PREFIX}/agents",          tags=["AI Agents"])
 app.include_router(websocket.router,       prefix=f"{API_PREFIX}",                 tags=["WebSocket"])
+app.include_router(medical_records.router, prefix=f"{API_PREFIX}/medical-records", tags=["Medical Records"])
+app.include_router(prescriptions.router,  prefix=f"{API_PREFIX}/prescriptions",   tags=["Prescriptions"])
+app.include_router(work_queues.router,     prefix=f"{API_PREFIX}/work-queues",     tags=["Department Work Queues"])
+app.include_router(audit.router,           prefix=f"{API_PREFIX}/audit",           tags=["Audit Logs"])
+app.include_router(vitals.router,          prefix=f"{API_PREFIX}/vitals",          tags=["Vitals Telemetry"])
+
+
 
 # ─── System Health & Root Endpoints ─────────────────────────────────────────
 

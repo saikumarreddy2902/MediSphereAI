@@ -2,7 +2,7 @@
 MediSphere AI — Laboratory API
 """
 from typing import List, Optional, Dict, Any, Union
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from app.services.laboratory import LaboratoryService
 from app.schemas.laboratory import LabOrderCreate, LabOrderUpdate, LabOrderResponse
@@ -66,8 +66,8 @@ async def create_lab_order(
             turnaround = test["turnaround"]
             break
             
-    now = datetime.utcnow()
-    expected_ready = now + timedelta(hours=turnaround)
+    now = datetime.now(timezone.utc)
+    expected_ready = now + timedelta(hours=float(turnaround))
     
     order_dict = order_in.model_dump()
     order_dict["order_id"] = order_id

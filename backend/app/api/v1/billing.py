@@ -5,6 +5,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from app.services.finance import BillingService
 from app.schemas.billing import BillCreate, BillResponse, BillingStats
+from app.api.deps import RoleChecker
+from app.models.user import User
 
 router = APIRouter()
 
@@ -12,13 +14,19 @@ def get_billing_service() -> BillingService:
     return BillingService()
 
 @router.get("/stats", response_model=BillingStats)
-async def get_billing_stats(service: BillingService = Depends(get_billing_service)):
-    """Get overall billing and revenue statistics"""
+async def get_billing_stats(
+    service: BillingService = Depends(get_billing_service),
+    current_user: User = Depends(RoleChecker(["admin", "staff"])),
+):
+    """Get overall billing and revenue statistics — admin/staff only"""
     return await service.get_revenue_summary()
 
 @router.get("/pending", response_model=List[BillResponse])
-async def get_pending_bills(service: BillingService = Depends(get_billing_service)):
-    """Get all pending or partially paid bills"""
+async def get_pending_bills(
+    service: BillingService = Depends(get_billing_service),
+    current_user: User = Depends(RoleChecker(["admin", "staff"])),
+):
+    """Get all pending or partially paid bills — admin/staff only"""
     return await service.get_pending_bills()
 
 @router.get("/", response_model=List[BillResponse])
@@ -27,7 +35,8 @@ async def list_bills(
     payment_status: Optional[str] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    service: BillingService = Depends(get_billing_service)
+    service: BillingService = Depends(get_billing_service),
+    current_user: User = Depends(RoleChecker(["admin", "doctor", "staff", "patient"])),
 ):
     """List bills with optional filtering by patient and payment status"""
     query = {}
@@ -40,7 +49,8 @@ async def list_bills(
 @router.get("/{bill_id}", response_model=BillResponse)
 async def get_bill(
     bill_id: str,
-    service: BillingService = Depends(get_billing_service)
+    service: BillingService = Depends(get_billing_service),
+    current_user: User = Depends(RoleChecker(["admin", "doctor", "staff", "patient"])),
 ):
     """Get a specific bill by ID"""
     return await service.get_or_404(bill_id)
@@ -48,7 +58,8 @@ async def get_bill(
 @router.post("/", response_model=BillResponse, status_code=status.HTTP_201_CREATED)
 async def create_bill(
     bill_in: BillCreate,
-    service: BillingService = Depends(get_billing_service)
+    service: BillingService = Depends(get_billing_service),
+    current_user: User = Depends(RoleChecker(["admin", "staff"])),
 ):
     """Create a new bill"""
     # Generate unique invoice number
@@ -67,7 +78,8 @@ async def create_bill(
 async def record_payment(
     bill_id: str,
     amount: float = Query(..., gt=0),
-    service: BillingService = Depends(get_billing_service)
+    service: BillingService = Depends(get_billing_service),
+    current_user: User = Depends(RoleChecker(["admin", "staff"])),
 ):
     """Record a payment towards a bill"""
     bill = await service.get_or_404(bill_id)

@@ -64,31 +64,117 @@ const departmentRatio = [
   { dept: 'Maternity', nurses: 3,  patients: 14, ratio: '1:4.7', safe: false },
 ]
 
+import { useEffect } from 'react'
+import { getStaffApi } from '@/lib/services/api-service'
+import { Plus, X, UserPlus } from 'lucide-react'
+
 export default function StaffPage() {
+  const [roster, setRoster] = useState(mockRoster)
   const [roleFilter, setRoleFilter] = useState<string>('ALL')
   const [tab, setTab] = useState<'roster' | 'ratios' | 'schedule'>('roster')
+  const [showAllocateModal, setShowAllocateModal] = useState(false)
+  const [bannerMsg, setBannerMsg] = useState<string | null>(null)
 
-  const onDuty    = mockRoster.filter(s => s.status === 'AVAILABLE' || s.status === 'IN_SURGERY').length
-  const onLeave   = mockRoster.filter(s => s.status === 'ON_LEAVE').length
-  const nurses    = mockRoster.filter(s => s.role === 'NURSE').length
-  const physicians= mockRoster.filter(s => s.role === 'PHYSICIAN' || s.role === 'SURGEON').length
+  // Allocation form state
+  const [staffForm, setStaffForm] = useState({
+    name: '',
+    role: 'PHYSICIAN',
+    dept: 'Cardiology',
+    shift: 'DAY',
+    status: 'AVAILABLE',
+    patients: 4,
+  })
 
-  const filtered  = roleFilter === 'ALL' ? mockRoster : mockRoster.filter(s => s.role === roleFilter)
+  useEffect(() => {
+    async function loadStaff() {
+      try {
+        const liveStaff = await getStaffApi()
+        if (Array.isArray(liveStaff) && liveStaff.length > 0) {
+          const mapped = liveStaff.map((s: any, idx: number) => ({
+            id: s.id || `S-${idx + 1}`,
+            name: s.name || s.full_name || 'Staff Member',
+            role: (s.role || s.specialization || 'NURSE').toUpperCase(),
+            dept: s.dept || s.department || 'General',
+            shift: s.shift || 'DAY',
+            status: s.status || 'AVAILABLE',
+            patients: s.patients || 0,
+            hrs: s.hrs || 8,
+          }))
+          setRoster(mapped)
+        }
+      } catch (err) {
+        console.warn('Staff API call failed, using mock roster fallback:', err)
+      }
+    }
+    loadStaff()
+  }, [])
+
+  const handleAllocateStaff = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!staffForm.name) {
+      alert('Please enter staff name')
+      return
+    }
+    const newEntry = {
+      id: `S-0${roster.length + 1}`,
+      name: staffForm.name,
+      role: staffForm.role,
+      dept: staffForm.dept,
+      shift: staffForm.shift,
+      status: staffForm.status,
+      patients: Number(staffForm.patients) || 0,
+      hrs: staffForm.status === 'AVAILABLE' ? 8.0 : 0,
+    }
+    setRoster(prev => [newEntry, ...prev])
+    setBannerMsg(`Successfully allocated ${staffForm.role} ${staffForm.name} to ${staffForm.dept} (${staffForm.shift} shift).`)
+    setShowAllocateModal(false)
+    setStaffForm({
+      name: '',
+      role: 'PHYSICIAN',
+      dept: 'Cardiology',
+      shift: 'DAY',
+      status: 'AVAILABLE',
+      patients: 4,
+    })
+    setTimeout(() => setBannerMsg(null), 4500)
+  }
+
+  const onDuty    = roster.filter(s => s.status === 'AVAILABLE' || s.status === 'IN_SURGERY').length
+  const onLeave   = roster.filter(s => s.status === 'ON_LEAVE').length
+  const nurses    = roster.filter(s => s.role === 'NURSE').length
+  const physicians= roster.filter(s => s.role === 'PHYSICIAN' || s.role === 'SURGEON').length
+
+  const filtered  = roleFilter === 'ALL' ? roster : roster.filter(s => s.role === roleFilter)
 
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-100">Staff Allocation &amp; Rostering</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Nurse-to-patient ratio optimization, shift balancing, and workforce intelligence</p>
+          <h2 className="text-xl font-bold tracking-tight text-slate-100">Staff &amp; Doctor Allocation</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Nurse-to-patient ratio optimization, doctor ward assignments, and shift scheduling</p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
-             style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
-          <div className="w-2 h-2 rounded-full status-running" />
-          {onDuty} staff on duty now
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => setShowAllocateModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+          >
+            <UserPlus size={14} /> Allocate Doctor / Staff
+          </button>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
+               style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
+            <div className="w-2 h-2 rounded-full status-running" />
+            {onDuty} staff on duty now
+          </div>
         </div>
       </div>
+
+      {bannerMsg && (
+        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
+          <UserCheck size={15} /> {bannerMsg}
+        </div>
+      )}
 
       {/* KPI Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
@@ -251,12 +337,132 @@ export default function StaffPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="day" tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} />
               <YAxis tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} />
-              <Tooltip contentStyle={{ background: 'rgba(15,15,24,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10 }} />
-              <Bar dataKey="day_shift"     name="Day Shift"     fill="#6366f1" radius={[3,3,0,0]} />
-              <Bar dataKey="evening_shift" name="Evening Shift" fill="#f59e0b" radius={[3,3,0,0]} />
-              <Bar dataKey="night_shift"   name="Night Shift"   fill="#8b5cf6" radius={[3,3,0,0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Allocate Staff Modal */}
+      {showAllocateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}>
+          <div className="w-full max-w-md rounded-2xl p-6 space-y-4 shadow-2xl" style={{ background: '#0f0f18', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-100">Allocate Doctor / Staff Member</h3>
+                <p className="text-xs text-slate-400">Assign role, department, shift, and patient load</p>
+              </div>
+              <button onClick={() => setShowAllocateModal(false)} className="text-slate-400 hover:text-white text-lg">×</button>
+            </div>
+
+            <form onSubmit={handleAllocateStaff} className="space-y-3.5">
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Full Name</label>
+                <input
+                  type="text"
+                  value={staffForm.name}
+                  onChange={e => setStaffForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g. Dr. Siddharth Rao / Nurse Meena S"
+                  className="w-full rounded-xl px-3 py-2 text-sm bg-white/5 border border-white/10 text-slate-200 outline-none"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Staff Role</label>
+                  <select
+                    value={staffForm.role}
+                    onChange={e => setStaffForm(f => ({ ...f, role: e.target.value }))}
+                    className="w-full rounded-xl px-3 py-2 text-sm bg-white/5 border border-white/10 text-slate-200 outline-none"
+                  >
+                    <option value="PHYSICIAN" style={{ background: '#13131e' }}>Physician / Doctor</option>
+                    <option value="SURGEON" style={{ background: '#13131e' }}>Surgeon</option>
+                    <option value="NURSE" style={{ background: '#13131e' }}>Nurse</option>
+                    <option value="RADIOLOGIST" style={{ background: '#13131e' }}>Radiologist</option>
+                    <option value="PHARMACIST" style={{ background: '#13131e' }}>Pharmacist</option>
+                    <option value="TECHNICIAN" style={{ background: '#13131e' }}>Technician</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Department</label>
+                  <select
+                    value={staffForm.dept}
+                    onChange={e => setStaffForm(f => ({ ...f, dept: e.target.value }))}
+                    className="w-full rounded-xl px-3 py-2 text-sm bg-white/5 border border-white/10 text-slate-200 outline-none"
+                  >
+                    <option value="Cardiology" style={{ background: '#13131e' }}>Cardiology</option>
+                    <option value="ICU" style={{ background: '#13131e' }}>ICU</option>
+                    <option value="Emergency" style={{ background: '#13131e' }}>Emergency</option>
+                    <option value="Surgery" style={{ background: '#13131e' }}>Surgery</option>
+                    <option value="Pediatric" style={{ background: '#13131e' }}>Pediatric</option>
+                    <option value="Maternity" style={{ background: '#13131e' }}>Maternity</option>
+                    <option value="General" style={{ background: '#13131e' }}>General Medicine</option>
+                    <option value="Radiology" style={{ background: '#13131e' }}>Radiology</option>
+                    <option value="Pharmacy" style={{ background: '#13131e' }}>Pharmacy</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Shift</label>
+                  <select
+                    value={staffForm.shift}
+                    onChange={e => setStaffForm(f => ({ ...f, shift: e.target.value }))}
+                    className="w-full rounded-xl px-3 py-2 text-sm bg-white/5 border border-white/10 text-slate-200 outline-none"
+                  >
+                    <option value="DAY" style={{ background: '#13131e' }}>☀️ Day Shift</option>
+                    <option value="EVENING" style={{ background: '#13131e' }}>🌇 Evening Shift</option>
+                    <option value="NIGHT" style={{ background: '#13131e' }}>🌙 Night Shift</option>
+                    <option value="ROTATING" style={{ background: '#13131e' }}>⭐ Rotating</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Assigned Patients</label>
+                  <input
+                    type="number"
+                    value={staffForm.patients}
+                    onChange={e => setStaffForm(f => ({ ...f, patients: parseInt(e.target.value) || 0 }))}
+                    min={0}
+                    max={30}
+                    className="w-full rounded-xl px-3 py-2 text-sm bg-white/5 border border-white/10 text-slate-200 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Status</label>
+                <select
+                  value={staffForm.status}
+                  onChange={e => setStaffForm(f => ({ ...f, status: e.target.value }))}
+                  className="w-full rounded-xl px-3 py-2 text-sm bg-white/5 border border-white/10 text-slate-200 outline-none"
+                >
+                  <option value="AVAILABLE" style={{ background: '#13131e' }}>🟢 Available on Duty</option>
+                  <option value="IN_SURGERY" style={{ background: '#13131e' }}>🟣 In Surgery / Procedure</option>
+                  <option value="ON_LEAVE" style={{ background: '#13131e' }}>🟡 On Leave</option>
+                  <option value="OFF_DUTY" style={{ background: '#13131e' }}>⚪ Off Duty</option>
+                </select>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/20"
+                >
+                  Confirm Allocation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAllocateModal(false)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/5 text-slate-400 hover:text-slate-200 border border-white/10"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

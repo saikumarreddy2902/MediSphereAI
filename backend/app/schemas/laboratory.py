@@ -30,11 +30,19 @@ class LabOrderUpdate(BaseModel):
     is_critical: Optional[bool] = None
     turnaround_hours: Optional[float] = Field(None, ge=0)
     result_available: Optional[bool] = None
+    result_value: Optional[str] = None    # Recorded result value (e.g. "12.5 g/dL")
+    result_unit: Optional[str] = None     # Unit of measurement (e.g. "g/dL")
+    result_notes: Optional[str] = None    # Pathologist notes
 
 
 class LabOrderResponse(BaseModel):
-    """Lab order record returned by API responses."""
-    id: str = Field(alias="_id")
+    """
+    Lab order record returned by API responses.
+
+    Uses `from_attributes=True` so Beanie ODM documents (which expose `.id`
+    as a `PydanticObjectId`) are automatically coerced to `str`.
+    """
+    id: Optional[str] = None
     order_id: str
     patient_id: str
     patient_name: str
@@ -50,6 +58,12 @@ class LabOrderResponse(BaseModel):
     cost: float
     ordered_by: str
     result_available: bool
+    result_value: Optional[str] = None
+    result_unit: Optional[str] = None
+    result_notes: Optional[str] = None
     created_at: Optional[datetime] = None
 
-    model_config = {"populate_by_name": True}
+    model_config = {
+        "populate_by_name": True,
+        "from_attributes": True,
+    }

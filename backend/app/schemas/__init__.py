@@ -39,6 +39,16 @@ from app.schemas.staff import (
 from app.schemas.common import (
     PaginatedResponse, SuccessResponse, ErrorResponse
 )
+from app.schemas.laboratory import (
+    LabOrderCreate, LabOrderUpdate, LabOrderResponse
+)
+from app.schemas.prescriptions import (
+    PrescriptionCreate, PrescriptionResponse, PrescribedMedicationIn,
+    DrugInteractionWarning, ValidateRequest, PrescriptionRenewRequest
+)
+from app.schemas.medical_records import (
+    MedicalRecordCreate, MedicalRecordUpdate, MedicalRecordResponse
+)
 
 __all__ = [
     # Auth
@@ -64,4 +74,6 @@ __all__ = [
     "StaffCreate", "StaffUpdate", "StaffResponse", "StaffRosterSummary",
     # Common
     "PaginatedResponse", "SuccessResponse", "ErrorResponse",
+    # Laboratory
+    "LabOrderCreate", "LabOrderUpdate", "LabOrderResponse",
 ]

@@ -11,6 +11,8 @@ from app.schemas.pharmacy import (
     InventoryResponse,
     InventoryAlertResponse
 )
+from app.api.deps import RoleChecker
+from app.models.user import User
 
 router = APIRouter()
 
@@ -20,9 +22,10 @@ def get_pharmacy_service() -> PharmacyService:
 @router.get("/inventory", response_model=List[InventoryResponse])
 async def get_inventory(
     medicine_id: Optional[str] = None,
-    service: PharmacyService = Depends(get_pharmacy_service)
+    service: PharmacyService = Depends(get_pharmacy_service),
+    current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "staff"])),
 ):
-    """Get all medicine inventory batches"""
+    """Get all medicine inventory batches — clinical staff only"""
     query = {}
     if medicine_id:
         query["medicine_id"] = medicine_id
@@ -31,14 +34,18 @@ async def get_inventory(
 @router.post("/inventory", response_model=InventoryResponse, status_code=status.HTTP_201_CREATED)
 async def add_inventory_batch(
     batch_in: InventoryCreate,
-    service: PharmacyService = Depends(get_pharmacy_service)
+    service: PharmacyService = Depends(get_pharmacy_service),
+    current_user: User = Depends(RoleChecker(["admin", "staff"])),
 ):
-    """Add a new inventory batch to stock"""
+    """Add a new inventory batch to stock — admin/staff only"""
     return await service.add_inventory_batch(batch_in)
 
 @router.get("/alerts", response_model=List[InventoryAlertResponse])
-async def get_stock_alerts(service: PharmacyService = Depends(get_pharmacy_service)):
-    """Get low stock and near-expiry alerts"""
+async def get_stock_alerts(
+    service: PharmacyService = Depends(get_pharmacy_service),
+    current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "staff"])),
+):
+    """Get low stock and near-expiry alerts — clinical staff only"""
     return await service.get_inventory_alerts()
 
 @router.get("/", response_model=List[MedicineResponse])
@@ -46,9 +53,10 @@ async def list_medicines(
     category: Optional[str] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    service: PharmacyService = Depends(get_pharmacy_service)
+    service: PharmacyService = Depends(get_pharmacy_service),
+    current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "staff"])),
 ):
-    """List medicines in the formulary"""
+    """List medicines in the formulary — clinical staff only"""
     query = {}
     if category:
         query["category"] = category
@@ -57,7 +65,8 @@ async def list_medicines(
 @router.post("/", response_model=MedicineResponse, status_code=status.HTTP_201_CREATED)
 async def create_medicine(
     med_in: MedicineCreate,
-    service: PharmacyService = Depends(get_pharmacy_service)
+    service: PharmacyService = Depends(get_pharmacy_service),
+    current_user: User = Depends(RoleChecker(["admin", "staff"])),
 ):
     """Register a new medicine in the formulary"""
     # Check if medicine with same name already exists

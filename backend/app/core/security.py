@@ -44,27 +44,32 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(subject: str | int, role: str) -> str:
+def create_access_token(subject: str | int, role: str, department_id: str | None = None) -> str:
     """
-    Create a signed JWT Access Token containing user identification and RBAC role.
+    Create a signed JWT Access Token containing user identification, RBAC role, and department scope.
 
     Args:
         subject (str | int): User ID or unique identifier subject for the token claim.
         role (str): Security role assigned to the user (e.g., 'admin', 'doctor', 'nurse').
+        department_id (str | None): Optional department assignment for department-level RBAC.
 
     Returns:
         str: Encoded JWT bearer token string.
     """
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    to_encode = {
+    to_encode: Dict[str, Any] = {
         "exp": expire,
         "sub": str(subject),
         "role": role,
         "type": "access"
     }
+    if department_id:
+        to_encode["department_id"] = department_id
+        
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
+
 
 
 def decode_token(token: str) -> Dict[str, Any]:

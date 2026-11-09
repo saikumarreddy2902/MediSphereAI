@@ -3,7 +3,7 @@ MediSphere AI — Base Agent Abstract Class
 All 14 AI agents inherit from this class.
 """
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 import asyncio
 import uuid
@@ -30,8 +30,27 @@ class AgentOutput:
         self.alerts = alerts
         self.insights = insights
         self.metadata = metadata or {}
-        self.generated_at = datetime.utcnow().isoformat()
+        self.generated_at = datetime.now(timezone.utc).isoformat()
         self.run_id = str(uuid.uuid4())
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "agent_name": self.agent_name,
+            "recommendations": self.recommendations,
+            "alerts": self.alerts,
+            "insights": self.insights,
+            "metadata": self.metadata,
+            "generated_at": self.generated_at,
+            "run_id": self.run_id,
+        }
+
+    def model_dump(self, **kwargs) -> Dict[str, Any]:
+        """Pydantic v2 compatibility method."""
+        return self.to_dict()
+
+    def dict(self, **kwargs) -> Dict[str, Any]:
+        """Pydantic v1 compatibility method."""
+        return self.to_dict()
 
 
 class BaseAgent(ABC):
@@ -77,14 +96,14 @@ class BaseAgent(ABC):
     async def run(self) -> AgentOutput:
         """Execute the agent analysis cycle with timing and error handling."""
         self.status = AgentStatus.RUNNING
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         try:
             output = await self.analyze()
             self.last_output = output
-            self.last_run = datetime.utcnow()
+            self.last_run = datetime.now(timezone.utc)
             self.run_count += 1
-            elapsed = (datetime.utcnow() - start_time).microseconds // 1000
+            elapsed = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
             self.total_runtime_ms += elapsed
             self.status = AgentStatus.IDLE
             return output
@@ -142,7 +161,7 @@ Format your response as structured JSON.
             "description": description,
             "priority": priority,
             "impact": impact,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
     def format_alert(
@@ -157,7 +176,7 @@ Format your response as structured JSON.
             "title": title,
             "message": message,
             "severity": severity,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     async def query_llm_rag(self, current_data: Dict) -> AgentOutput:
@@ -191,8 +210,8 @@ Format your response as structured JSON.
 
         try:
             # 3. Call Ollama (JSON Mode if supported or standard request)
-            # Use short timeout to avoid blocking execution loops
-            async with httpx.AsyncClient(timeout=8.0) as httpx_client:
+            # Fast safeguard timeout so background loops aren't blocked when Ollama is offline
+            async with httpx.AsyncClient(timeout=1.0) as httpx_client:
                 response = await httpx_client.post(
                     f"{settings.OLLAMA_BASE_URL}/api/generate",
                     json={

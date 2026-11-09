@@ -2,7 +2,7 @@
 MediSphere AI — Insurance API
 """
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from app.services.finance import InsuranceService
 from app.schemas.insurance import InsuranceClaimCreate, InsuranceClaimUpdate, InsuranceClaimResponse
@@ -43,7 +43,7 @@ async def submit_claim(
     claim_dict = claim_in.model_dump()
     claim_dict["claim_number"] = claim_num
     claim_dict["claim_status"] = "SUBMITTED"
-    claim_dict["submission_date"] = datetime.utcnow()
+    claim_dict["submission_date"] = datetime.now(timezone.utc)
     
     return await service.repository.create(claim_dict)
 
@@ -57,5 +57,5 @@ async def update_claim_status(
     claim = await service.get_or_404(claim_id)
     update_data = claim_update.model_dump(exclude_unset=True)
     if "resolution_date" not in update_data and claim_update.claim_status in ["APPROVED", "REJECTED"]:
-        update_data["resolution_date"] = datetime.utcnow()
+        update_data["resolution_date"] = datetime.now(timezone.utc)
     return await service.repository.update(claim, update_data)

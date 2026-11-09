@@ -7,7 +7,7 @@ import uuid
 from typing import List, Dict, Any, Optional
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
-from qdrant_client.errors import ResponseHandlingError
+from qdrant_client.http.exceptions import ResponseHandlingException as ResponseHandlingError
 from app.core.config import settings
 
 class VectorStore:
@@ -21,12 +21,20 @@ class VectorStore:
         
         try:
             print(f"Connecting to Qdrant at {settings.QDRANT_URL}...")
-            self.client = QdrantClient(
-                url=settings.QDRANT_URL,
-                api_key=settings.QDRANT_API_KEY if settings.QDRANT_API_KEY else None,
-                timeout=5.0  # 5-second quick timeout safeguard
-            )
-            
+            try:
+                self.client = QdrantClient(
+                    url=settings.QDRANT_URL,
+                    api_key=settings.QDRANT_API_KEY if settings.QDRANT_API_KEY else None,
+                    check_compatibility=False,
+                    timeout=1
+                )
+                self.client.get_collections()
+                print("Connected to remote Qdrant Vector DB!")
+            except Exception:
+                print("Remote Qdrant not running — initializing Embedded In-Memory Qdrant Vector Store...")
+                self.client = QdrantClient(location=":memory:")
+                print("Embedded In-Memory Qdrant initialized successfully!")
+
             # Load lightweight encoder locally
             print("Loading sentence-transformers encoder...")
             from sentence_transformers import SentenceTransformer
@@ -56,7 +64,8 @@ class VectorStore:
                     )
                 )
         except Exception as e:
-            print(f"WARNING: Failed to create Qdrant collection '{collection_name}': {e}")
+            print(f"WARNING: Failed to create Qdrant collection '{collection_name}': {e}. Disabling vector store.")
+            self.is_active = False
 
     def upsert_document(self, collection_name: str, text: str, payload: Dict[str, Any]):
         """Embed text and insert it into Qdrant index."""
@@ -90,11 +99,11 @@ class VectorStore:
             self.create_collection_if_not_exists(collection_name)
             query_vector = self.encoder.encode(query).tolist()
             
-            search_result = self.client.search(
+            search_result = self.client.query_points(
                 collection_name=collection_name,
-                query_vector=query_vector,
+                query=query_vector,
                 limit=limit
-            )
+            ).points
             
             results = []
             for hit in search_result:
@@ -105,7 +114,8 @@ class VectorStore:
                 })
             return results
         except Exception as e:
-            print(f"WARNING: Qdrant search failed: {e}")
+            print(f"WARNING: Qdrant search failed: {e}. Disabling vector store.")
+            self.is_active = False
             return []
 
 # Singleton instance

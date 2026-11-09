@@ -25,6 +25,7 @@ class PatientService(BaseService[Patient]):
         return await self.repository.create(create_data)
 
     async def search_patients(self, query: str) -> List[Patient]:
+        # pyrefly: ignore[missing-attribute]
         return await self.repository.search_by_name(query)
 
 
@@ -41,6 +42,10 @@ class BedService(BaseService[Bed]):
         occupancy_rate = (occupied_beds / total_beds * 100) if total_beds > 0 else 0
         
         summary = {
+            "occupancy_rate": round(occupancy_rate, 2),
+            "total_beds": total_beds,
+            "occupied_beds": occupied_beds,
+            "available_beds": available_beds,
             "total": {
                 "total": total_beds,
                 "occupied": occupied_beds,
@@ -60,7 +65,18 @@ class BedService(BaseService[Bed]):
             }
         ]
         
-        ward_stats = await self.repository.model_class.aggregate(pipeline).to_list()
+        try:
+            ward_stats = await self.repository.model.aggregate(pipeline).to_list()
+        except Exception:
+            ward_stats = []
+            try:
+                distinct_wards = await self.repository.model.distinct("ward")
+                for w in distinct_wards:
+                    w_total = await self.repository.count({"ward": w})
+                    w_occ = await self.repository.count({"ward": w, "is_occupied": True})
+                    ward_stats.append({"_id": w, "total": w_total, "occupied": w_occ})
+            except Exception:
+                pass
         
         # 3. Format the ward stats for the frontend
         # Map ward names to the keys expected by the frontend

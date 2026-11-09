@@ -6,6 +6,7 @@ Description: Uses Pydantic BaseSettings for strongly typed, validated environmen
              Injects system configurations from environment variables or .env files securely.
 """
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from typing import List
 
 
@@ -21,7 +22,8 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # ─── MongoDB Atlas Configuration ──────────────────────────────────────────────
-    MONGODB_URI: str = "mongodb+srv://2303a52291_db_user:nPxAqk5aS7iPo8QI@cluster0.rw2skdf.mongodb.net/"
+    # Required — must be set via environment variable; no default with credentials
+    MONGODB_URI: str = "mongodb://localhost:27017"
     DATABASE_NAME: str = "medisphere_db"
 
     # ─── Redis Caching & Queue Configuration ──────────────────────────────────────
@@ -38,18 +40,30 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
     # ─── Authentication & JWT Security Configuration ─────────────────────────────
-    # WARNING: Override SECRET_KEY in production environments via environment variables.
-    SECRET_KEY: str = "medisphere-super-secret-key-change-in-production"
+    # MUST be overridden in production via SECRET_KEY env var
+    SECRET_KEY: str = "CHANGE_ME_IN_PRODUCTION_USE_256BIT_RANDOM"
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60    # 1 hour (short-lived)
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7       # 7 days
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def validate_secret_key(cls, v: str, info) -> str:  # type: ignore[override]
+        if v == "CHANGE_ME_IN_PRODUCTION_USE_256BIT_RANDOM":
+            import os
+            if os.getenv("ENVIRONMENT", "production") == "production":
+                raise ValueError(
+                    "SECRET_KEY must be set to a secure random value in production. "
+                    "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                )
+        return v
 
     # ─── CORS Policy Allowed Origins ──────────────────────────────────────────────
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",
         "https://medisphere-ai.vercel.app",
         "https://medisphere-ai.onrender.com",
-        "*"
+        # NOTE: Never add "*" here — it conflicts with allow_credentials=True
     ]
 
     # ─── AI Agent Execution Engine Configuration ──────────────────────────────────

@@ -1,28 +1,39 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 import {
   LayoutDashboard, Users, Bed, ShieldAlert, Users2, Pill, TestTube2, Cog,
   CreditCard, FileText, TrendingUp, Bot, LogOut, ChevronLeft, ChevronRight,
-  Bell, Sun, Moon
+  Bell, Sun, Moon, CalendarCheck, ClipboardList, Stethoscope, Check, Layers,
+  HeartPulse, Activity, ShieldCheck, CalendarDays, BarChart3
 } from 'lucide-react'
 import AIChatbot from '../components/AIChatbot'
+import { getNotificationsApi, markAllNotificationsReadApi } from '@/lib/services/api-service'
 
 const NAV_ITEMS = [
-  { href: '/dashboard',            label: 'Executive Overview',    icon: <LayoutDashboard size={20} />, badge: null },
-  { href: '/dashboard/patients',   label: 'Patient Flow',          icon: <Users size={20} />, badge: null },
-  { href: '/dashboard/beds',       label: 'Bed Intelligence',      icon: <Bed size={20} />, badge: '91%' },
-  { href: '/dashboard/emergency',  label: 'Emergency Response',    icon: <ShieldAlert size={20} />, badge: '11' },
-  { href: '/dashboard/staff',      label: 'Staff Allocation',      icon: <Users2 size={20} />, badge: null },
-  { href: '/dashboard/pharmacy',   label: 'Pharmacy',              icon: <Pill size={20} />, badge: '4⚠' },
-  { href: '/dashboard/laboratory', label: 'Laboratory',            icon: <TestTube2 size={20} />, badge: null },
-  { href: '/dashboard/equipment',  label: 'Equipment',             icon: <Cog size={20} />, badge: null },
-  { href: '/dashboard/billing',    label: 'Billing & Revenue',     icon: <CreditCard size={20} />, badge: null },
-  { href: '/dashboard/insurance',  label: 'Insurance Claims',      icon: <FileText size={20} />, badge: null },
-  { href: '/dashboard/analytics',  label: 'Analytics & Forecast',  icon: <TrendingUp size={20} />, badge: null },
-  { href: '/dashboard/agents',     label: 'AI Agent Monitor',      icon: <Bot size={20} />, badge: '15' },
+  { href: '/dashboard',                  label: 'Executive Overview',    icon: <LayoutDashboard size={20} />, badge: null,   roles: ['admin', 'doctor', 'nurse'] },
+  { href: '/dashboard/patient-portal',   label: 'Patient Portal',        icon: <HeartPulse size={20} />,     badge: 'Self-Care', roles: ['patient'] },
+  { href: '/dashboard/department-queue', label: 'Department Queues',     icon: <Layers size={20} />,         badge: 'Active', roles: ['admin', 'doctor', 'nurse'] },
+  { href: '/dashboard/patients',         label: 'Patient Flow',          icon: <Users size={20} />,          badge: null,   roles: ['admin', 'doctor', 'nurse'] },
+  { href: '/dashboard/appointments',     label: 'Appointments',          icon: <CalendarCheck size={20} />,  badge: null,   roles: ['admin', 'doctor', 'nurse', 'patient'] },
+  { href: '/dashboard/vitals',           label: 'Vitals Monitor',        icon: <Activity size={20} />,       badge: 'Live', roles: ['admin', 'doctor', 'nurse'] },
+  { href: '/dashboard/beds',             label: 'Bed Intelligence',      icon: <Bed size={20} />,            badge: '91%',  roles: ['admin', 'doctor', 'nurse'] },
+  { href: '/dashboard/emergency',        label: 'Emergency Response',    icon: <ShieldAlert size={20} />,    badge: '11',   roles: ['admin', 'doctor', 'nurse'] },
+  { href: '/dashboard/staff',            label: 'Staff Allocation',      icon: <Users2 size={20} />,         badge: null,   roles: ['admin', 'nurse'] },
+  { href: '/dashboard/staff/schedule',   label: 'Shift Roster',          icon: <CalendarDays size={20} />,   badge: null,   roles: ['admin', 'nurse'] },
+  { href: '/dashboard/pharmacy',         label: 'Pharmacy',              icon: <Pill size={20} />,           badge: '4⚠',   roles: ['admin', 'doctor', 'nurse'] },
+  { href: '/dashboard/prescriptions',    label: 'Prescriptions',         icon: <ClipboardList size={20} />,  badge: null,   roles: ['admin', 'doctor', 'nurse', 'patient'] },
+  { href: '/dashboard/laboratory',       label: 'Laboratory',            icon: <TestTube2 size={20} />,      badge: null,   roles: ['admin', 'doctor', 'nurse'] },
+  { href: '/dashboard/medical-records',  label: 'Medical Records',       icon: <Stethoscope size={20} />,    badge: null,   roles: ['admin', 'doctor', 'nurse'] },
+  { href: '/dashboard/equipment',        label: 'Equipment',             icon: <Cog size={20} />,            badge: null,   roles: ['admin', 'nurse'] },
+  { href: '/dashboard/billing',          label: 'Billing & Revenue',     icon: <CreditCard size={20} />,     badge: null,   roles: ['admin', 'patient'] },
+  { href: '/dashboard/insurance',        label: 'Insurance Claims',      icon: <FileText size={20} />,       badge: null,   roles: ['admin', 'patient'] },
+  { href: '/dashboard/analytics',        label: 'Analytics & Forecast',  icon: <TrendingUp size={20} />,     badge: null,   roles: ['admin', 'doctor'] },
+  { href: '/dashboard/reports',          label: 'Report Builder',        icon: <BarChart3 size={20} />,      badge: null,   roles: ['admin', 'doctor'] },
+  { href: '/dashboard/agents',           label: 'AI Agent Monitor',      icon: <Bot size={20} />,            badge: '15',   roles: ['admin', 'doctor'] },
+  { href: '/dashboard/audit-logs',       label: 'Audit Logs',            icon: <ShieldCheck size={20} />,    badge: null,   roles: ['admin'] },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -31,13 +42,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [time, setTime] = useState(new Date())
+  const [mounted, setMounted] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
 
+  // ─── Notification state ───────────────────────────────────────
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const notifRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
+    setMounted(true)
     const u = localStorage.getItem('medisphere_user')
-    if (!u) router.push('/login')
-    else setUser(JSON.parse(u))
+    if (!u) {
+      router.push('/login')
+      return
+    }
+    const parsedUser = JSON.parse(u)
+    setUser(parsedUser)
+
+    // ─── Strict Universal RBAC Route Guard ───
+    const userRole = parsedUser.role || 'admin'
+    const activeRoute = NAV_ITEMS.find(item => item.href === pathname)
+
+    if (activeRoute) {
+      if (!activeRoute.roles.includes(userRole)) {
+        console.warn(`[RBAC] Access Restricted: Role '${userRole}' is not authorized to access '${pathname}'. Enforcing role platform isolation.`)
+        if (userRole === 'patient') {
+          router.push('/dashboard/patient-portal')
+        } else {
+          router.push('/dashboard')
+        }
+        return
+      }
+    } else if (userRole === 'patient' && pathname.startsWith('/dashboard') && pathname !== '/dashboard/patient-portal') {
+      // Catch any unlisted dashboard sub-routes for patient
+      router.push('/dashboard/patient-portal')
+      return
+    }
 
     const savedTheme = (localStorage.getItem('medisphere_theme') as 'dark' | 'light') || 'dark'
     setTheme(savedTheme)
@@ -51,7 +94,66 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const tick = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(tick)
+  }, [pathname])
+
+  const handleSwitchRole = (newRole: string) => {
+    const roleUserMap: Record<string, { username: string; role: string }> = {
+      admin: { username: 'admin', role: 'admin' },
+      doctor: { username: 'doctor', role: 'doctor' },
+      nurse: { username: 'nurse', role: 'nurse' },
+      patient: { username: 'patient', role: 'patient' },
+    }
+    const target = roleUserMap[newRole] || { username: newRole, role: newRole }
+    localStorage.setItem('medisphere_user', JSON.stringify(target))
+    setUser(target)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('medisphere_user_changed'))
+    }
+    if (newRole === 'patient') {
+      router.push('/dashboard/patient-portal')
+    } else {
+      router.push('/dashboard')
+    }
+  }
+
+  // Fetch notifications on mount and every 60 s
+  useEffect(() => {
+    const fetchNotifs = async () => {
+      try {
+        const data = await getNotificationsApi({ limit: 15 })
+        setNotifications(data.notifications || [])
+        setUnreadCount(data.unread || 0)
+      } catch {
+        // Backend not running — show 3 mock notifications
+        setNotifications([
+          { id: '1', title: 'ICU Capacity Alert', message: 'ICU at 91% occupancy. Consider initiating step-down transfers.', notification_type: 'alert', is_read: false, created_at: new Date().toISOString() },
+          { id: '2', title: 'Lab Result Ready', message: 'Troponin-T result for patient Rajesh Kumar is now available.', notification_type: 'info', is_read: false, created_at: new Date().toISOString() },
+          { id: '3', title: 'Prescription Expiring', message: '3 active prescriptions expire within 24 hours.', notification_type: 'warning', is_read: true, created_at: new Date().toISOString() },
+        ])
+        setUnreadCount(2)
+      }
+    }
+    fetchNotifs()
+    const interval = setInterval(fetchNotifs, 60_000)
+    return () => clearInterval(interval)
   }, [])
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const handleMarkAllRead = async () => {
+    try { await markAllNotificationsReadApi() } catch {}
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+    setUnreadCount(0)
+  }
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark'
@@ -68,6 +170,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = () => {
     localStorage.removeItem('medisphere_user')
+    // Clear the auth cookie so Edge Middleware redirects properly
+    document.cookie = 'medisphere_user=; path=/; max-age=0; SameSite=Lax'
     router.push('/login')
   }
 
@@ -147,15 +251,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-          {NAV_ITEMS.map(item => {
+          {NAV_ITEMS.filter(item => {
+            const role = user?.role || 'admin'
+            return item.roles.includes(role)
+          }).map(item => {
             const isActive = pathname === item.href
+            const role = user?.role || 'admin'
+            let displayLabel = item.label
+            if (item.href === '/dashboard') {
+              if (role === 'doctor') displayLabel = 'Doctor Station'
+              else if (role === 'nurse') displayLabel = 'Nurse Station'
+              else if (role === 'patient') displayLabel = 'Health Portal'
+              else displayLabel = 'Executive Overview'
+            }
             return (
               <Link
                 key={item.href}
                 id={`nav-${item.href.split('/').pop()}`}
                 href={item.href}
                 className={`sidebar-item group ${isActive ? 'active shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(99,102,241,0.15)]' : ''}`}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? displayLabel : undefined}
                 style={{ color: isActive ? (isDark ? '#818cf8' : '#4f46e5') : (isDark ? '#94a3b8' : '#334155') }}
               >
                 <span className={`flex-shrink-0 transition-colors ${isActive ? 'text-indigo-400' : (isDark ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-500 group-hover:text-slate-900')}`}>
@@ -163,7 +278,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </span>
                 {!collapsed && (
                   <>
-                    <span className="flex-1 truncate">{item.label}</span>
+                    <span className="flex-1 truncate">{displayLabel}</span>
                     {item.badge && (
                       <span className="text-xs px-1.5 py-0.5 rounded-md font-medium flex-shrink-0"
                             style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171' }}>
@@ -188,9 +303,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate" style={{ color: isDark ? '#e2e8f0' : '#0f172a' }}>
-                    {user?.username === 'admin' ? 'Hospital Admin' : user?.username}
+                    {user?.username === 'admin' ? 'Hospital Admin' :
+                     user?.username === 'patient' ? 'Rajesh Kumar' :
+                     user?.username === 'doctor' ? 'Dr. Priya Sharma' :
+                     user?.username === 'nurse' ? 'Nurse Sarah Jenkins' : user?.username}
                   </div>
-                  <div className="text-xs capitalize" style={{ color: isDark ? '#475569' : '#64748b' }}>{user?.role || 'admin'}</div>
+                  <div className="text-xs font-semibold capitalize" style={{
+                    color: user?.role === 'patient' ? '#ec4899' :
+                           user?.role === 'doctor' ? '#10b981' :
+                           user?.role === 'nurse' ? '#f59e0b' :
+                           (isDark ? '#818cf8' : '#4f46e5')
+                  }}>
+                    {user?.role === 'patient' ? 'Patient (Self-Care)' : user?.role || 'admin'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -219,14 +344,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 }}>
           <div>
             <h1 className="text-base font-semibold" style={{ color: isDark ? '#e2e8f0' : '#0f172a' }}>
-              {NAV_ITEMS.find(n => n.href === pathname)?.label || 'Dashboard'}
+              {pathname === '/dashboard' ? (
+                user?.role === 'doctor' ? 'Doctor Workstation' :
+                user?.role === 'nurse' ? 'Nurse Operations Station' :
+                user?.role === 'patient' ? 'Patient Health Portal' : 'Executive Overview'
+              ) : (NAV_ITEMS.find(n => n.href === pathname)?.label || 'Dashboard')}
             </h1>
-            <p className="text-xs" style={{ color: isDark ? '#475569' : '#64748b' }}>
-              Last updated: {time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            <p suppressHydrationWarning className="text-xs" style={{ color: isDark ? '#475569' : '#64748b' }}>
+              Last updated: {mounted ? time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '...'}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Quick RBAC Role Switcher */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs"
+                 style={{
+                   background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                   border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                 }}>
+              <span className="text-[11px] font-medium hidden sm:inline" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>
+                Role:
+              </span>
+              <select
+                id="role-switcher-select"
+                value={user?.role || 'admin'}
+                onChange={(e) => handleSwitchRole(e.target.value)}
+                className="bg-transparent font-semibold text-xs outline-none cursor-pointer"
+                style={{
+                  color: user?.role === 'patient' ? '#ec4899' :
+                         user?.role === 'doctor' ? '#10b981' :
+                         user?.role === 'nurse' ? '#f59e0b' :
+                         (isDark ? '#818cf8' : '#4f46e5')
+                }}
+              >
+                <option value="admin" style={{ background: '#13131e', color: '#e2e8f0' }}>👑 Hospital Admin</option>
+                <option value="doctor" style={{ background: '#13131e', color: '#e2e8f0' }}>🩺 Doctor (Dr. Priya)</option>
+                <option value="nurse" style={{ background: '#13131e', color: '#e2e8f0' }}>🏥 Nurse (Operations)</option>
+                <option value="patient" style={{ background: '#13131e', color: '#ec4899' }}>👤 Patient (Rajesh Kumar)</option>
+              </select>
+            </div>
             {/* Dark / Light Theme Toggle Button */}
             <button
               id="theme-toggle-btn"
@@ -253,17 +409,66 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="text-xs font-medium" style={{ color: '#10b981' }}>Live</span>
             </div>
 
-            {/* Alerts */}
-            <button id="header-alerts" className="relative p-2 rounded-xl transition-all hover:bg-white/10"
-                    style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-              <Bell size={18} className={isDark ? 'text-slate-400' : 'text-slate-600'} />
-              <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.8)]" style={{ background: '#ef4444' }} />
-            </button>
+            {/* Alerts / Notifications */}
+            <div ref={notifRef} className="relative">
+              <button
+                id="header-alerts"
+                onClick={() => setShowNotifications(p => !p)}
+                className="relative p-2 rounded-xl transition-all hover:bg-white/10"
+                style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                aria-label="Notifications"
+              >
+                <Bell size={18} className={isDark ? 'text-slate-400' : 'text-slate-600'} />
+                {unreadCount > 0 && (
+                  <div className="absolute top-1 right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shadow-[0_0_8px_rgba(239,68,68,0.8)]"
+                    style={{ background: '#ef4444', color: 'white' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </div>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 top-12 w-80 rounded-2xl overflow-hidden shadow-2xl z-50"
+                  style={{ background: isDark ? '#0f0f18' : '#ffffff', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                    <span className="text-sm font-semibold" style={{ color: '#e2e8f0' }}>Notifications</span>
+                    {unreadCount > 0 && (
+                      <button onClick={handleMarkAllRead} className="text-xs flex items-center gap-1"
+                        style={{ color: '#6366f1' }}>
+                        <Check size={11}/> Mark all read
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-72 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-xs text-slate-500">No notifications</div>
+                    ) : notifications.map(n => {
+                      const typeColor: Record<string,string> = { alert: '#ef4444', warning: '#f59e0b', info: '#6366f1', critical: '#dc2626' }
+                      const color = typeColor[n.notification_type] || '#6366f1'
+                      return (
+                        <div key={n.id}
+                          className="px-4 py-3 border-b transition-colors hover:bg-white/5"
+                          style={{ borderColor: 'rgba(255,255,255,0.04)', opacity: n.is_read ? 0.6 : 1 }}>
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: n.is_read ? '#475569' : color }} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-slate-200 leading-tight">{n.title}</p>
+                              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{n.message}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Date */}
-            <div className="text-xs px-3 py-1.5 rounded-lg hidden md:block"
+            <div suppressHydrationWarning className="text-xs px-3 py-1.5 rounded-lg hidden md:block"
                  style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', color: isDark ? '#64748b' : '#475569' }}>
-              {time.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+              {mounted ? time.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '...'}
             </div>
           </div>
         </header>
@@ -273,8 +478,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
 
-        {/* Multi-Agent AI Chatbot Floating Widget */}
-        <AIChatbot />
+        {/* Multi-Agent AI Chatbot Floating Widget — strictly restricted to patient role */}
+        {mounted && user?.role === 'patient' && <AIChatbot />}
       </div>
     </div>
   )

@@ -1,9 +1,38 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+  external_labels:
+    environment: 'production'
+    service: 'medisphere-ai'
 
 scrape_configs:
-  - job_name: "medisphere-api"
-    metrics_path: "/metrics"
+  # ─── MediSphere FastAPI Backend ───────────────────────────────────────────────
+  - job_name: 'medisphere-backend'
     static_configs:
-      - targets: ["localhost:8000"]
+      - targets: ['backend:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # ─── MongoDB Exporter ─────────────────────────────────────────────────────────
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb-exporter:9216']
+    scrape_interval: 30s
+
+  # ─── Redis Exporter ───────────────────────────────────────────────────────────
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 15s
+
+  # ─── Node Exporter (Host Metrics) ────────────────────────────────────────────
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+  # ─── Nginx Exporter ───────────────────────────────────────────────────────────
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+    scrape_interval: 15s

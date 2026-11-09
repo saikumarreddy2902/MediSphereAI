@@ -8,6 +8,8 @@ import {
   Heart, Thermometer, Wind, TrendingUp, Eye
 } from 'lucide-react'
 import { mockEmergencyCases } from '@/lib/mock-data'
+import { getEmergencyCasesApi } from '@/lib/services/api-service'
+import { useWebSocket } from '@/lib/hooks/useWebSocket'
 
 const TRIAGE_CONFIG: Record<number, { label: string; color: string; bg: string }> = {
   1: { label: 'Resuscitation', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' },
@@ -48,26 +50,56 @@ function VitalBadge({ value, label, unit, danger }: { value: string | number; la
 export default function EmergencyPage() {
   const [selected, setSelected] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 1 | 2 | 3 | 4 | 5>('all')
-  const [, tick] = useState(0)
+  const [rawCases, setRawCases] = useState<any[]>(mockEmergencyCases)
+  const { isConnected, lastMessage } = useWebSocket()
 
   useEffect(() => {
-    const t = setInterval(() => tick((n: number) => n + 1), 30000)
-    return () => clearInterval(t)
+    const fetchCases = async () => {
+      try {
+        const data = await getEmergencyCasesApi()
+        if (data && Array.isArray(data) && data.length > 0) {
+          setRawCases(data.map((item: any) => ({
+            id: item.id || item._id || String(Math.random()),
+            patient_name: item.patient_name || 'Emergency Patient',
+            age: item.age || 45,
+            gender: item.gender || 'U',
+            chief_complaint: item.chief_complaint || 'Acute distress',
+            triage_level: item.triage_level || 3,
+            wait_minutes: item.wait_minutes || 12,
+            assigned_doctor: item.assigned_doctor || 'On-duty ER Physician',
+            status: item.status || 'waiting',
+            location: item.location || 'ER Bay 1'
+          })))
+        }
+      } catch (e) {
+        // Keep mockEmergencyCases fallback
+      }
+    }
+    fetchCases()
   }, [])
 
-  const casesWithVitals = mockEmergencyCases.map(c => ({
+  useEffect(() => {
+    if (lastMessage && lastMessage.type === 'EMERGENCY_UPDATE') {
+      // Live event received
+      if (lastMessage.data?.case) {
+        setRawCases(prev => [lastMessage.data.case, ...prev])
+      }
+    }
+  }, [lastMessage])
+
+  const casesWithVitals = rawCases.map((c, idx) => ({
     ...c,
-    pulse: 72 + (parseInt(c.id) * 7) % 45,
-    bp: `${115 + (parseInt(c.id) * 3) % 25}/${75 + (parseInt(c.id) * 2) % 15}`,
-    spo2: 98 - (parseInt(c.id) * 1) % 5,
+    pulse: c.pulse || (72 + (idx * 7) % 45),
+    bp: c.bp || `${115 + (idx * 3) % 25}/${75 + (idx * 2) % 15}`,
+    spo2: c.spo2 || (98 - (idx * 1) % 5),
   }))
 
   const cases = filter === 'all' ? casesWithVitals : casesWithVitals.filter(c => c.triage_level === filter)
   const selectedCase = casesWithVitals.find(c => c.id === selected)
 
-  const activeEmergencies = mockEmergencyCases.filter(c => c.triage_level <= 2).length
-  const avgWait = Math.round(mockEmergencyCases.reduce((s, c) => s + c.wait_minutes, 0) / mockEmergencyCases.length)
-  const criticalPct = Math.round((mockEmergencyCases.filter(c => c.triage_level <= 2).length / mockEmergencyCases.length) * 100)
+  const activeEmergencies = rawCases.filter(c => c.triage_level <= 2).length
+  const avgWait = rawCases.length > 0 ? Math.round(rawCases.reduce((s, c) => s + (c.wait_minutes || 0), 0) / rawCases.length) : 0
+
 
   return (
     <div className="space-y-6 animate-fade-in-up">

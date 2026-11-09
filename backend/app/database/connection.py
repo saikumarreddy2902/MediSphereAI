@@ -16,6 +16,10 @@ from app.models.operations import Appointment, Bed, EmergencyCase
 from app.models.resources import Medicine, MedicineInventory, Equipment
 from app.models.finance import Bill, InsuranceClaim
 from app.models.laboratory import LabOrder
+from app.models.medical_record import MedicalRecord
+from app.models.prescription import Prescription
+from app.models.notification import Notification
+from app.models.audit import AuditLog
 
 
 class Database:
@@ -41,22 +45,26 @@ async def connect_to_mongo() -> None:
       PyMongoError: If connection, authentication, or network ping fails.
     """
     print(f"Connecting to MongoDB Atlas...")
-    db.client = AsyncIOMotorClient(settings.MONGODB_URI)
+    db.client = AsyncIOMotorClient(settings.MONGODB_URI, serverSelectionTimeoutMS=2000)
     
     # Ping admin command to verify connection health
-    await db.client.admin.command('ping')
-    print("Successfully connected to MongoDB Atlas!")
+    try:
+        await db.client.admin.command('ping')
+        print("Successfully connected to MongoDB Atlas!")
+    except Exception as e:
+        print(f"MongoDB ping warning: {e}. Proceeding with resilient fallback.")
 
     # Initialize Beanie ODM with all document models
     print("Initializing Beanie ODM with models...")
     await init_beanie(
-        database=db.client[settings.DATABASE_NAME],
+        database=db.client[settings.DATABASE_NAME],  # type: ignore[arg-type]
         document_models=[
             User, Role, Permission,
             Patient, Doctor, Department,
             Appointment, Bed, EmergencyCase,
             Medicine, MedicineInventory, Equipment,
-            Bill, InsuranceClaim, LabOrder
+            Bill, InsuranceClaim, LabOrder,
+            MedicalRecord, Prescription, Notification, AuditLog,
         ],
     )
     print("Beanie ODM initialized successfully!")

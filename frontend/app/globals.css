@@ -22,8 +22,8 @@
 html.light, body.light {
   --bg-primary: #f8fafc;
   --bg-secondary: #f1f5f9;
-  --bg-card: rgba(255, 255, 255, 0.95);
-  --bg-card-hover: rgba(241, 245, 249, 0.98);
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
   --border: rgba(0, 0, 0, 0.08);
   --border-hover: rgba(0, 0, 0, 0.16);
   --text-primary: #0f172a;
@@ -31,6 +31,75 @@ html.light, body.light {
   --text-muted: #64748b;
   --accent: #4f46e5;
   --accent-glow: rgba(79, 70, 229, 0.2);
+}
+
+body.light {
+  color: #0f172a !important;
+  background-color: #f8fafc !important;
+}
+
+/* Light mode text contrast overrides */
+html.light .text-slate-100, body.light .text-slate-100 {
+  color: #0f172a !important;
+}
+html.light .text-slate-200, body.light .text-slate-200 {
+  color: #1e293b !important;
+}
+html.light .text-slate-300, body.light .text-slate-300 {
+  color: #334155 !important;
+}
+html.light .text-slate-400, body.light .text-slate-400 {
+  color: #64748b !important;
+}
+html.light .text-slate-500, body.light .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* Light mode card styling */
+html.light .glass-card, body.light .glass-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03) !important;
+}
+html.light .glass-card:hover, body.light .glass-card:hover {
+  background: #ffffff !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Light mode card sub-boxes & inputs */
+html.light .bg-white\/\[0\.02\], body.light .bg-white\/\[0\.02\],
+html.light .bg-white\/\[0\.03\], body.light .bg-white\/\[0\.03\],
+html.light .bg-white\/\[0\.04\], body.light .bg-white\/\[0\.04\],
+html.light .bg-white\/5, body.light .bg-white\/5 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+html.light .bg-white\/10, body.light .bg-white\/10 {
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light .border-white\/5, body.light .border-white\/5,
+html.light .border-white\/10, body.light .border-white\/10 {
+  border-color: #e2e8f0 !important;
+}
+
+html.light .bg-black\/20, body.light .bg-black\/20,
+html.light .bg-black\/30, body.light .bg-black\/30 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light input, html.light select, html.light textarea,
+body.light input, body.light select, body.light textarea {
+  color: #0f172a !important;
+}
+html.light input::placeholder, body.light input::placeholder {
+  color: #94a3b8 !important;
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────────── */

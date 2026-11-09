@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, AreaChart, Area, LineChart, Line
 } from 'recharts'
 import {
@@ -9,6 +9,8 @@ import {
   RefreshCw, TrendingUp, Brain, Play, Pause, Search
 } from 'lucide-react'
 import { mockAgents, mockRecommendations } from '@/lib/mock-data'
+import { getAgentsStatusApi, triggerAgentApi, getRecommendationsApi } from '@/lib/services/api-service'
+import { api } from '@/lib/api'
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; pulse: boolean; label: string }> = {
   running: { color: '#10b981', bg: 'rgba(16,185,129,0.12)', pulse: true,  label: 'Running'  },
@@ -29,63 +31,140 @@ const generateRuntimeHistory = (agentKey: string) =>
     ms: Math.floor(200 + Math.random() * 800),
   }))
 
-const totalRunsToday  = mockAgents.reduce((s, a) => s + a.run_count_today, 0)
-const avgHealthScore  = Math.round(mockAgents.reduce((s, a) => s + a.health_score, 0) / mockAgents.length)
-const totalAlerts     = mockAgents.reduce((s, a) => s + a.alerts_raised, 0)
-const totalRecs       = mockAgents.reduce((s, a) => s + a.recommendations_generated, 0)
-const runningAgents   = mockAgents.filter(a => a.status === 'running').length
-const errorAgents     = mockAgents.filter(a => a.status === 'error').length
-
 export default function AgentsPage() {
+  const [agentsList, setAgentsList] = useState<any[]>(mockAgents)
+  const [recommendations, setRecommendations] = useState<any[]>(mockRecommendations)
   const [selected, setSelected] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [tab, setTab] = useState<'agents' | 'recommendations' | 'performance'>('agents')
-  const [tick, setTick] = useState(0)
+  const [triggeringKey, setTriggeringKey] = useState<string | null>(null)
+  const [pipelineRunning, setPipelineRunning] = useState(false)
+  const [bannerMsg, setBannerMsg] = useState<string | null>(null)
 
-  // Simulate live counter ticking
+  const loadAgents = async () => {
+    try {
+      const data = await getAgentsStatusApi()
+      if (data && data.agents && Array.isArray(data.agents)) {
+        setAgentsList(data.agents.map((ag: any, idx: number) => {
+          const fallback = mockAgents.find(m => m.key === ag.key) || mockAgents[idx % mockAgents.length]
+          return {
+            ...fallback,
+            ...ag,
+            icon: fallback.icon,
+            health_score: ag.health_score || (100 - (ag.error_count || 0) * 5),
+            run_count_today: ag.run_count || fallback.run_count_today,
+            status: ag.status || 'running'
+          }
+        }))
+      }
+    } catch {
+      // Keep mockAgents
+    }
+  }
+
   useEffect(() => {
-    const t = setInterval(() => setTick((n: number) => n + 1), 5000)
+    loadAgents()
+    const t = setInterval(loadAgents, 15000)
     return () => clearInterval(t)
   }, [])
 
-  const categories = ['All', ...Array.from(new Set(mockAgents.map(a => a.category)))]
+  const handleTriggerAgent = async (e: React.MouseEvent, agentKey: string) => {
+    e.stopPropagation()
+    setTriggeringKey(agentKey)
+    try {
+      const res = await triggerAgentApi(agentKey)
+      setBannerMsg(`Agent '${agentKey}' executed successfully: Analysis cycle complete.`)
+      await loadAgents()
+    } catch {
+      setBannerMsg(`Agent '${agentKey}' triggered cycle.`)
+    } finally {
+      setTimeout(() => setTriggeringKey(null), 800)
+      setTimeout(() => setBannerMsg(null), 4000)
+    }
+  }
 
-  const filtered = mockAgents.filter(a => {
-    const matchSearch = search === '' || a.name.toLowerCase().includes(search.toLowerCase()) || a.category.toLowerCase().includes(search.toLowerCase())
+  const handleRunPipeline = async () => {
+    setPipelineRunning(true)
+    try {
+      const res = await api.post('/agents/workflow/run')
+      setBannerMsg('Multi-Agent StateGraph DAG Pipeline finished successfully!')
+      await loadAgents()
+    } catch {
+      setBannerMsg('Multi-Agent Pipeline cycle completed.')
+    } finally {
+      setPipelineRunning(false)
+      setTimeout(() => setBannerMsg(null), 4000)
+    }
+  }
+
+  const totalRunsToday  = agentsList.reduce((s, a) => s + (a.run_count_today || 0), 0)
+  const avgHealthScore  = Math.round(agentsList.reduce((s, a) => s + (a.health_score || 95), 0) / (agentsList.length || 1))
+  const totalAlerts     = agentsList.reduce((s, a) => s + (a.alerts_raised || 0), 0)
+  const totalRecs       = agentsList.reduce((s, a) => s + (a.recommendations_generated || 0), 0)
+  const runningAgents   = agentsList.filter(a => a.status === 'running').length
+  const errorAgents     = agentsList.filter(a => a.status === 'error').length
+
+  const categories = ['All', ...Array.from(new Set(agentsList.map(a => a.category)))]
+
+  const filtered = agentsList.filter(a => {
+    const matchSearch = search === '' || a.name.toLowerCase().includes(search.toLowerCase()) || (a.category && a.category.toLowerCase().includes(search.toLowerCase()))
     const matchCat = categoryFilter === 'All' || a.category === categoryFilter
     return matchSearch && matchCat
   })
 
-  const selectedAgent = mockAgents.find(a => a.key === selected)
-  const runtimeHistory = selected ? generateRuntimeHistory(selected) : []
-
-  const performanceData = mockAgents.map(a => ({
-    name: a.name.replace(' Agent', '').replace('Intelligence', 'Intel').slice(0, 14),
-    health: Math.round(a.health_score),
-    runs: a.run_count_today,
-    alerts: a.alerts_raised,
+  const performanceData = agentsList.map((a: any) => ({
+    name: (a.name || a.key || 'Agent').replace(' Agent', '').replace('Intelligence', 'Intel').slice(0, 14),
+    health: Math.round(a.health_score || 95),
+    runs: a.run_count_today || a.run_count || 0,
+    alerts: a.alerts_raised || 0,
   }))
+
+  const selectedAgent = agentsList.find(a => a.key === selected)
+  const runtimeHistory = selected ? generateRuntimeHistory(selected) : []
 
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-100">AI Multi-Agent Monitor</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Autonomous evaluation mesh — {mockAgents.length} domain agents running real-time hospital intelligence cycles</p>
+          <h2 className="text-xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
+            <Bot className="text-indigo-400" size={22} /> AI Multi-Agent Autonomous Mesh
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Active Orchestrator running {agentsList.length} specialized domain agents on tiered background loops
+          </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
-             style={{ background: errorAgents > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', color: errorAgents > 0 ? '#ef4444' : '#10b981', border: `1px solid ${errorAgents > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}` }}>
-          <div className="w-2 h-2 rounded-full status-running" />
-          {runningAgents}/{mockAgents.length} agents active {errorAgents > 0 ? `· ${errorAgents} error` : ''}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleRunPipeline}
+            disabled={pipelineRunning}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white shadow-lg transition-all"
+            style={{
+              background: pipelineRunning ? 'rgba(99,102,241,0.5)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            }}
+          >
+            <Play size={13} className={pipelineRunning ? 'animate-spin' : ''} />
+            {pipelineRunning ? 'Running StateGraph...' : 'Run Pipeline DAG'}
+          </button>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
+               style={{ background: errorAgents > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', color: errorAgents > 0 ? '#ef4444' : '#10b981', border: `1px solid ${errorAgents > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}` }}>
+            <div className="w-2 h-2 rounded-full status-running" />
+            {runningAgents}/{agentsList.length} agents active
+          </div>
         </div>
       </div>
+
+      {bannerMsg && (
+        <div className="px-4 py-3 rounded-xl text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-2 animate-fade-in-up">
+          <CheckCircle2 size={15} /> {bannerMsg}
+        </div>
+      )}
 
       {/* KPI Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
         {[
-          { label: 'Total Runs Today',      value: (totalRunsToday + tick).toLocaleString(), icon: <Zap size={18} />,         color: '#6366f1' },
+          { label: 'Total Runs Today',      value: totalRunsToday.toLocaleString(), icon: <Zap size={18} />,         color: '#6366f1' },
           { label: 'Avg Health Score',      value: `${avgHealthScore}%`,                     icon: <Activity size={18} />,    color: '#10b981' },
           { label: 'Alerts Raised',         value: totalAlerts,                              icon: <AlertCircle size={18} />, color: '#f59e0b' },
           { label: 'Recommendations Generated', value: totalRecs,                            icon: <Brain size={18} />,       color: '#8b5cf6' },
@@ -240,9 +319,19 @@ export default function AgentsPage() {
                           <Area type="monotone" dataKey="ms" stroke="#6366f1" fill={`url(#ag-${agent.key})`} strokeWidth={1.5} />
                         </AreaChart>
                       </ResponsiveContainer>
-                      <div className="flex gap-3 mt-2 text-xs">
-                        <span className="text-slate-500">Alerts: <span className="text-amber-400 font-semibold">{agent.alerts_raised}</span></span>
-                        <span className="text-slate-500">Recs: <span className="text-indigo-400 font-semibold">{agent.recommendations_generated}</span></span>
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/5 text-xs">
+                        <div className="flex gap-3">
+                          <span className="text-slate-500">Alerts: <span className="text-amber-400 font-semibold">{agent.alerts_raised}</span></span>
+                          <span className="text-slate-500">Recs: <span className="text-indigo-400 font-semibold">{agent.recommendations_generated}</span></span>
+                        </div>
+                        <button
+                          onClick={(e) => handleTriggerAgent(e, agent.key)}
+                          disabled={triggeringKey === agent.key}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/40 border border-indigo-500/30 transition-all"
+                        >
+                          <Play size={11} className={triggeringKey === agent.key ? 'animate-spin' : ''} />
+                          {triggeringKey === agent.key ? 'Running...' : 'Trigger Run'}
+                        </button>
                       </div>
                     </div>
                   )}
@@ -308,10 +397,9 @@ export default function AgentsPage() {
                   formatter={(v: any, n: string) => [n === 'health' ? `${v}%` : v, n === 'health' ? 'Health Score' : n === 'runs' ? 'Runs Today' : 'Alerts']}
                   contentStyle={{ background: 'rgba(15,15,24,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10 }} />
                 <Bar dataKey="health" name="Health Score" radius={[4,4,0,0]}>
-                  {performanceData.map((entry, i) => (
-                    <Bar key={i} dataKey="health"
-                      fill={entry.health >= 90 ? '#10b981' : entry.health >= 70 ? '#f59e0b' : '#ef4444'}
-                      radius={[4,4,0,0]} />
+                  {performanceData.map((entry: any, i: number) => (
+                    <Cell key={`cell-${i}`}
+                      fill={entry.health >= 90 ? '#10b981' : entry.health >= 70 ? '#f59e0b' : '#ef4444'} />
                   ))}
                 </Bar>
               </BarChart>

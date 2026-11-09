@@ -13,8 +13,14 @@ help:
 up:
 	docker compose up -d --build
 
+prod-up:
+	docker compose -f docker-compose.prod.yml up -d --build
+
 down:
 	docker compose down
+
+prod-down:
+	docker compose -f docker-compose.prod.yml down
 
 restart:
 	docker compose restart
@@ -28,5 +34,15 @@ build:
 test:
 	python -m pytest backend/tests -v
 
+type-check:
+	cd frontend && npx tsc --noEmit
+
 lint:
 	python -m flake8 backend/app
+
+seed:
+	python backend/seed.py
+
+export-openapi:
+	python -c "import json; from app.main import app; print(json.dumps(app.openapi(), indent=2))" > docs/openapi.json
+

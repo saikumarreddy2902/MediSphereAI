@@ -34,16 +34,22 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MONGODB_URI=mongodb+srv://2303a52291_db_user:nPxAqk5aS7iPo8QI@cluster0.rw2skdf.mongodb.net/
-      - DATABASE_NAME=medisphere_db
+      - MONGODB_URI=${MONGODB_URI}
+      - DATABASE_NAME=${DATABASE_NAME:-medisphere_db}
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
-      - SECRET_KEY=medisphere-super-secret-key-change-in-production
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
-      - ENVIRONMENT=production
+      - SECRET_KEY=${SECRET_KEY}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
     depends_on:
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - medisphere-net
     security_opt:
