@@ -15,6 +15,7 @@ for directory in [root_dir, backend_dir]:
         sys.path.insert(0, directory)
 
 # Gunicorn settings
+pythonpath = f"{root_dir},{backend_dir},.,backend"
 bind = f"0.0.0.0:{os.environ.get('PORT', '8000')}"
 workers = int(os.environ.get("WEB_CONCURRENCY", "1"))
 worker_class = "uvicorn.workers.UvicornWorker"
@@ -28,3 +29,4 @@ def post_fork(server, worker):
     for directory in [root_dir, backend_dir]:
         if os.path.isdir(directory) and directory not in sys.path:
             sys.path.insert(0, directory)
+

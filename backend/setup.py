@@ -1,7 +1,7 @@
-from setuptools import setup, find_namespace_packages
+from setuptools import setup, find_packages
 
 setup(
-    name="medisphere-ai-backend",
+    name="medisphere-backend-app",
     version="1.0.0",
-    packages=find_namespace_packages(),
+    packages=find_packages(),
 )
