@@ -1,7 +1,0 @@
-{
-  "test_id": "RBAC-01",
-  "role_tested": "patient",
-  "restricted_endpoint": "GET /api/v1/audit/",
-  "status_code": 404,
-  "verdict": "PASSED - Correctly restricted with 403 Forbidden"
-}

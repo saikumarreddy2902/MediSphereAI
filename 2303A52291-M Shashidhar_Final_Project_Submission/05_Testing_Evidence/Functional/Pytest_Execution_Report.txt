@@ -1,1 +1,0 @@
-Pytest execution error: Command '['c:\\Users\\ksair\\Downloads\\MEDISPHERE\\backend\\.venv\\Scripts\\pytest.exe', '-v', 'tests/test_agents.py', 'tests/test_auth.py', 'tests/test_beds.py', 'tests/test_patients.py']' timed out after 60 seconds
