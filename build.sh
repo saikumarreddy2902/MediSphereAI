@@ -14,3 +14,4 @@ elif [ -f "../requirements.txt" ]; then
     echo "Found ../requirements.txt"
     pip install -r ../requirements.txt
 fi
+
