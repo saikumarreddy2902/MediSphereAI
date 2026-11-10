@@ -66,22 +66,29 @@ jobs:
         run: |
           cd backend
           python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
-          sleep 6
+          for i in $(seq 1 30); do
+            if curl -s -f http://127.0.0.1:8000/health > /dev/null; then
+              echo "✅ MediSphere API Server ready on port 8000"
+              break
+            fi
+            echo "Waiting for API server initialization ($i/30)..."
+            sleep 2
+          done
 
       - name: Verify API Live Readiness & Fetch OpenAPI Definition
         run: |
           curl -f http://127.0.0.1:8000/health || exit 1
-          curl -f http://127.0.0.1:8000/api/v1/openapi.json -o /tmp/openapi.json || exit 1
+          curl -f http://127.0.0.1:8000/api/v1/openapi.json -o ./openapi.json || exit 1
           echo "OpenAPI schema successfully extracted."
 
       - name: Run OWASP ZAP API Security Scanner
-        uses: zaproxy/action-api-scan@v0.9.0
-        with:
-          target: 'http://127.0.0.1:8000/api/v1/openapi.json'
-          format: 'openapi'
-          fail_action: false
-          allow_issue_writing: false
-          cmd_options: '-a'
+        run: |
+          docker run --network="host" -v $(pwd):/zap/wrk/:rw -t zaproxy/zap-stable zap-api-scan.py \
+            -t http://127.0.0.1:8000/api/v1/openapi.json \
+            -f openapi \
+            -a \
+            -r zap_report.html \
+            -J report_json.json || true
 
       - name: Upload OWASP ZAP DAST Security Report
         if: always()
