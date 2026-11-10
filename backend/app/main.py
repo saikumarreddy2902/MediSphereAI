@@ -163,6 +163,14 @@ app.include_router(vitals.router,          prefix=f"{API_PREFIX}/vitals",       
 
 # ─── System Health & Root Endpoints ─────────────────────────────────────────
 
+@app.get(f"{API_PREFIX}/openapi.json", include_in_schema=False)
+def get_v1_openapi() -> dict[str, Any]:
+    """
+    Expose OpenAPI specification under /api/v1/openapi.json for automated DAST scanners.
+    """
+    return app.openapi()
+
+
 @app.get("/health", tags=["Health"])
 async def health_check() -> dict[str, Any]:
     """

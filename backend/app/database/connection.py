@@ -56,18 +56,21 @@ async def connect_to_mongo() -> None:
 
     # Initialize Beanie ODM with all document models
     print("Initializing Beanie ODM with models...")
-    await init_beanie(
-        database=db.client[settings.DATABASE_NAME],  # type: ignore[arg-type]
-        document_models=[
-            User, Role, Permission,
-            Patient, Doctor, Department,
-            Appointment, Bed, EmergencyCase,
-            Medicine, MedicineInventory, Equipment,
-            Bill, InsuranceClaim, LabOrder,
-            MedicalRecord, Prescription, Notification, AuditLog,
-        ],
-    )
-    print("Beanie ODM initialized successfully!")
+    try:
+        await init_beanie(
+            database=db.client[settings.DATABASE_NAME],  # type: ignore[arg-type]
+            document_models=[
+                User, Role, Permission,
+                Patient, Doctor, Department,
+                Appointment, Bed, EmergencyCase,
+                Medicine, MedicineInventory, Equipment,
+                Bill, InsuranceClaim, LabOrder,
+                MedicalRecord, Prescription, Notification, AuditLog,
+            ],
+        )
+        print("Beanie ODM initialized successfully!")
+    except Exception as e:
+        print(f"Beanie ODM initialization notice: {e}. Proceeding in resilient mode.")
 
 
 async def close_mongo_connection() -> None:

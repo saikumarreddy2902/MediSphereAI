@@ -87,17 +87,12 @@ jobs:
           fi
 
           echo "Extracting OpenAPI specification schema..."
-          curl -f http://127.0.0.1:8000/api/v1/openapi.json -o ./openapi.json || exit 1
+          curl -f http://127.0.0.1:8000/api/v1/openapi.json -o ./openapi.json || curl -f http://127.0.0.1:8000/openapi.json -o ./openapi.json || exit 1
           echo "OpenAPI schema successfully extracted."
 
-          echo "Preparing workspace permissions for OWASP ZAP..."
-          chmod -R 777 "$(pwd)"
-          touch zap_report.html report_json.json
-          chmod 666 zap_report.html report_json.json
-
           echo "Running OWASP ZAP Dynamic API Security Scanner..."
-          docker run --network="host" -v "$(pwd):/zap/wrk/:rw" -t ghcr.io/zaproxy/zaproxy:stable zap-api-scan.py \
-            -t http://127.0.0.1:8000/api/v1/openapi.json \
+          docker run --network="host" --user root -v "$(pwd):/zap/wrk/:rw" -t ghcr.io/zaproxy/zaproxy:stable zap-api-scan.py \
+            -t http://127.0.0.1:8000/openapi.json \
             -f openapi \
             -a \
             -r zap_report.html \
