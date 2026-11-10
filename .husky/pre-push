@@ -8,7 +8,7 @@ echo "========================================================"
 
 # 1. Run Backend Pytest Suite
 echo "🧪 Running Backend Test Suite (Pytest)..."
-if command -v python >/dev/null 2>&1; then
+if python -m pytest --version >/dev/null 2>&1; then
     python -m pytest backend/tests/ -v -q --asyncio-mode=auto
     TEST_RESULT=$?
     if [ $TEST_RESULT -ne 0 ]; then
@@ -19,7 +19,7 @@ if command -v python >/dev/null 2>&1; then
     fi
     echo "✅ All backend test cases passed!"
 elif command -v uv >/dev/null 2>&1; then
-    uv run pytest backend/tests/ -v -q --asyncio-mode=auto
+    uv run --no-project --with-requirements backend/requirements.txt python -m pytest backend/tests/ -v -q --asyncio-mode=auto
     TEST_RESULT=$?
     if [ $TEST_RESULT -ne 0 ]; then
         echo ""
@@ -29,7 +29,7 @@ elif command -v uv >/dev/null 2>&1; then
     fi
     echo "✅ All backend test cases passed!"
 else
-    echo "⚠️ Python not found in PATH, skipping local pytest execution."
+    echo "⚠️ Python test runner not found in PATH, skipping local pytest execution."
 fi
 
 # 2. Frontend TypeScript Check
