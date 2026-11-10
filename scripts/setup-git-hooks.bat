@@ -26,3 +26,4 @@ echo   - pre-commit: Secret scanner + Ruff linter gate
 echo   - pre-push:   Pytest test cases + Frontend typecheck gate
 echo.
 pause
+

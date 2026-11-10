@@ -55,3 +55,4 @@ Enable the following checkboxes:
 | `.github/workflows/codeql.yml` | `push`, `pull_request`, weekly cron | GitHub CodeQL static analysis for Python & JS/TS | Flags security vulnerabilities & blocks merge |
 | Local `.husky/pre-commit` | `git commit` | Secret detection, API keys, .env detection, Ruff check | Blocks commit locally |
 | Local `.husky/pre-push` | `git push` | Pytest test suite, TypeScript compile check | Blocks push locally |
+

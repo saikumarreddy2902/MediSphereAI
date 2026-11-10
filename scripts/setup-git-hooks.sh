@@ -30,3 +30,4 @@ echo ""
 echo "🚀 Git hooks setup complete!"
 echo "   - pre-commit: Secret scanner + Ruff linter"
 echo "   - pre-push:   Pytest test cases + Frontend typecheck"
+
