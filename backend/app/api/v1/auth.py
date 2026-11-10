@@ -1,14 +1,19 @@
 """
 MediSphere AI — Auth API
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordRequestForm
-from app.core.security import verify_password, get_password_hash, create_access_token, decode_token
-from app.models.user import User
-from app.repositories.core import UserRepository
+import secrets
+import time
+
 from app.api.deps import get_current_user
+from app.core.security import create_access_token, get_password_hash, verify_password
 from app.middleware.rate_limit import limiter
 from app.models.audit import AuditLog
+from app.models.user import User
+from app.repositories.core import UserRepository
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, EmailStr, Field
+
 
 router = APIRouter()
 
@@ -60,22 +65,23 @@ async def login_access_token(request: Request, form_data: OAuth2PasswordRequestF
     }
 
 
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+
+
+
 
 class UserRegisterRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
     password: str = Field(..., min_length=6)
     full_name: str = Field(..., min_length=2, max_length=100)
-    role: Optional[str] = "doctor"
-    department_id: Optional[str] = None
+    role: str | None = "doctor"
+    department_id: str | None = None
 
 class UserUpdateRequest(BaseModel):
-    full_name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    current_password: Optional[str] = None
-    new_password: Optional[str] = None
+    full_name: str | None = None
+    email: EmailStr | None = None
+    current_password: str | None = None
+    new_password: str | None = None
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, summary="Self-Registration: Create new user account and profile")
 async def register_user(request: Request, body: UserRegisterRequest):
@@ -239,17 +245,13 @@ async def logout(current_user: User = Depends(get_current_user)):
 
 
 # ─── In-memory OTP store (production: use Redis with TTL) ────────────────────
-import secrets
-import time
 _OTP_STORE: dict = {}   # email → {otp, expires}
 
 
-from pydantic import BaseModel as PM, EmailStr
-
-class ResetRequestSchema(PM):
+class ResetRequestSchema(BaseModel):
     email: EmailStr
 
-class VerifyOTPSchema(PM):
+class VerifyOTPSchema(BaseModel):
     email: EmailStr
     otp: str
     new_password: str
@@ -262,7 +264,7 @@ async def request_password_reset(payload: ResetRequestSchema):
     Demo: OTP is returned directly in the response for testing.
     """
     repo = UserRepository()
-    user = await repo.get_by_email(str(payload.email))
+    _ = await repo.get_by_email(str(payload.email))
     # Do not reveal whether email exists (security)
     otp = str(secrets.randbelow(900000) + 100000)
     _OTP_STORE[str(payload.email)] = {"otp": otp, "expires": time.time() + 600}  # 10 min TTL

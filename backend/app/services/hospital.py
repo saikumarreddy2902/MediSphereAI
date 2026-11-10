@@ -1,12 +1,12 @@
 """
 MediSphere AI — Patient and Bed Services
 """
-from typing import List
-from fastapi import HTTPException, status
-from app.services.base import BaseService
-from app.repositories.core import PatientRepository, BedRepository
+
 from app.models.hospital import Patient
 from app.models.operations import Bed
+from app.repositories.core import BedRepository, PatientRepository
+from app.services.base import BaseService
+from fastapi import HTTPException, status
 
 
 class PatientService(BaseService[Patient]):
@@ -24,7 +24,7 @@ class PatientService(BaseService[Patient]):
             )
         return await self.repository.create(create_data)
 
-    async def search_patients(self, query: str) -> List[Patient]:
+    async def search_patients(self, query: str) -> list[Patient]:
         # pyrefly: ignore[missing-attribute]
         return await self.repository.search_by_name(query)
 

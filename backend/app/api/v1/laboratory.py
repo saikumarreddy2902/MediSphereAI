@@ -1,12 +1,12 @@
 """
 MediSphere AI — Laboratory API
 """
-from typing import List, Optional, Dict, Any, Union
-from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from app.services.laboratory import LaboratoryService
-from app.schemas.laboratory import LabOrderCreate, LabOrderUpdate, LabOrderResponse
+from datetime import UTC, datetime, timedelta
+
 from app.mock.data_generator import LAB_TESTS
+from app.schemas.laboratory import LabOrderCreate, LabOrderResponse, LabOrderUpdate
+from app.services.laboratory import LaboratoryService
+from fastapi import APIRouter, Depends, Query, status
 
 router = APIRouter()
 
@@ -15,8 +15,8 @@ def get_lab_service() -> LaboratoryService:
 
 @router.get("/orders")
 async def list_orders(
-    status: Optional[str] = None,
-    priority: Optional[str] = None,
+    status: str | None = None,
+    priority: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(60, le=200),
     service: LaboratoryService = Depends(get_lab_service)
@@ -38,7 +38,7 @@ async def get_stats(service: LaboratoryService = Depends(get_lab_service)):
     """Get laboratory performance metrics and status breakdown"""
     return await service.get_lab_stats()
 
-@router.get("/critical", response_model=List[LabOrderResponse])
+@router.get("/critical", response_model=list[LabOrderResponse])
 async def get_critical_tests(service: LaboratoryService = Depends(get_lab_service)):
     """Get all critical lab orders that are pending resolution"""
     query = {"is_critical": True, "status": {"$ne": "completed"}}
@@ -66,7 +66,7 @@ async def create_lab_order(
             turnaround = test["turnaround"]
             break
             
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expected_ready = now + timedelta(hours=float(turnaround))
     
     order_dict = order_in.model_dump()

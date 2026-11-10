@@ -1,13 +1,14 @@
 """
 MediSphere AI — Patients API
 """
-from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from app.services.hospital import PatientService
-from app.api.deps import get_current_user, RoleChecker
-from app.models.user import User
-from pydantic import BaseModel
 from datetime import date
+from typing import Any
+
+from app.api.deps import RoleChecker
+from app.models.user import User
+from app.services.hospital import PatientService
+from fastapi import APIRouter, Depends, status
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -24,12 +25,12 @@ class PatientCreate(BaseModel):
     contact_number: str
     address: str
     blood_group: str
-    email: Optional[str] = None
-    medical_history: Optional[List[str]] = []
-    allergies: Optional[List[str]] = []
+    email: str | None = None
+    medical_history: list[str] | None = []
+    allergies: list[str] | None = []
 
 
-@router.get("/", response_model=List[Dict[str, Any]])
+@router.get("/", response_model=list[dict[str, Any]])
 async def get_patients(
     skip: int = 0, 
     limit: int = 100,
@@ -52,8 +53,9 @@ async def register_patient(
     
     # Also register into HOSPITAL_PATIENT_REGISTRY so appointment booking & patient lookup recognizes them instantly
     try:
-        from app.api.v1.appointments import HOSPITAL_PATIENT_REGISTRY
         from datetime import date
+
+        from app.api.v1.appointments import HOSPITAL_PATIENT_REGISTRY
         pat_id_str = str(new_patient.id)
         short_mr = f"P-{pat_id_str[-4:].upper()}"
         calc_age = (date.today() - new_patient.date_of_birth).days // 365 if new_patient.date_of_birth else 35
@@ -109,10 +111,11 @@ async def get_patient_portal_summary(
     Profile, vitals, upcoming appointments, active prescriptions,
     diagnostic reports, billing status, and care-team communications.
     """
-    from app.models.hospital import Patient
-    from app.api.v1.appointments import HOSPITAL_PATIENT_REGISTRY
-    from bson import ObjectId
     from datetime import date
+
+    from app.api.v1.appointments import HOSPITAL_PATIENT_REGISTRY
+    from app.models.hospital import Patient
+    from bson import ObjectId
     
     clean_id = patient_id.strip()
     db_patient = None
@@ -405,7 +408,7 @@ class RefillRequest(BaseModel):
     patient_id: str
     prescription_id: str
     medication_name: str
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 @router.post("/portal/refill-request")
@@ -422,7 +425,7 @@ async def request_prescription_refill(request: RefillRequest):
 class PortalMessage(BaseModel):
     patient_id: str
     department: str
-    doctor_name: Optional[str] = "Primary Physician"
+    doctor_name: str | None = "Primary Physician"
     message: str
 
 

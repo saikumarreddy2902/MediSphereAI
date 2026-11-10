@@ -1,14 +1,14 @@
 """
 MediSphere AI — Base Beanie Document
 """
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
+
 from beanie import Document
 from pydantic import Field
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class BaseDocument(Document):
@@ -17,8 +17,8 @@ class BaseDocument(Document):
     """
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
-    created_by: Optional[str] = None
-    updated_by: Optional[str] = None
+    created_by: str | None = None
+    updated_by: str | None = None
     version: int = 1
     status: str = "ACTIVE"
 

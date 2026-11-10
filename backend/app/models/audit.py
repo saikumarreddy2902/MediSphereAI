@@ -6,8 +6,8 @@ authentication events, data mutations, permission changes, and critical reads.
 
 This supports HIPAA audit trail requirements and forensic investigation.
 """
-from typing import Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from app.models.base import BaseDocument
 
 
@@ -27,20 +27,20 @@ class AuditLog(BaseDocument):
         detail       — optional human-readable detail or error message
         timestamp    — UTC timestamp when the action occurred
     """
-    user_id: Optional[str] = None
-    username: Optional[str] = None
+    user_id: str | None = None
+    username: str | None = None
     action: str                          # e.g. LOGIN, CREATE_PATIENT, DELETE_BILL
     resource: str                        # e.g. "patient", "appointment"
-    resource_id: Optional[str] = None
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
+    resource_id: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
     outcome: str = "SUCCESS"             # SUCCESS | FAILURE
-    detail: Optional[str] = None
+    detail: str | None = None
     timestamp: datetime = None           # type: ignore[assignment]
 
     def __init__(self, **data):
         if "timestamp" not in data or data["timestamp"] is None:
-            data["timestamp"] = datetime.now(timezone.utc)
+            data["timestamp"] = datetime.now(UTC)
         super().__init__(**data)
 
     class Settings:

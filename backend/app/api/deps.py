@@ -1,15 +1,13 @@
 """
 MediSphere AI — API Dependencies
 """
-from typing import List, Generator, Optional
-from fastapi import Depends, HTTPException, status
-
-from fastapi.security import OAuth2PasswordBearer
 from app.core.security import decode_token
 from app.models.user import User
 from app.repositories.core import UserRepository
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     """
@@ -41,7 +39,7 @@ class RoleChecker:
     Dependency to enforce Role Based Access Control (RBAC).
     Usage: `Depends(RoleChecker(["admin", "doctor"]))`
     """
-    def __init__(self, allowed_roles: List[str]):
+    def __init__(self, allowed_roles: list[str]):
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: User = Depends(get_current_user)) -> User:
@@ -65,7 +63,7 @@ class DepartmentAccessChecker:
     - Clinical staff (doctors, nurses) are constrained to their assigned department.
     Usage: `Depends(DepartmentAccessChecker(["Cardiology", "ICU"]))`
     """
-    def __init__(self, allowed_departments: Optional[List[str]] = None, allow_cross_dept_roles: Optional[List[str]] = None):
+    def __init__(self, allowed_departments: list[str] | None = None, allow_cross_dept_roles: list[str] | None = None):
         self.allowed_departments = [d.lower() for d in allowed_departments] if allowed_departments else []
         self.allow_cross_dept_roles = [r.lower() for r in (allow_cross_dept_roles or ["admin", "superuser", "emergency_head", "director"])]
 
@@ -88,7 +86,7 @@ class DepartmentAccessChecker:
         return user
 
 
-def enforce_department_scope(user: User, requested_department: Optional[str] = None) -> Optional[str]:
+def enforce_department_scope(user: User, requested_department: str | None = None) -> str | None:
     """
     Scopes a request to the user's assigned department if they are a department-bound doctor or nurse.
     - Admins and superusers can query any requested department (or all if None).

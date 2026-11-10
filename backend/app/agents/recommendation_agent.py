@@ -1,6 +1,7 @@
 """Recommendation Agent — aggregates and prioritizes recommendations from all agents."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import get_recommendations
+
 
 class RecommendationAgent(BaseAgent):
     agent_name = "Recommendation Agent"

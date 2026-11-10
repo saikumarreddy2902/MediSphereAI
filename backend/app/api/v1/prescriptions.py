@@ -4,77 +4,27 @@ MediSphere AI — Prescriptions API
 Endpoints for managing patient prescriptions: create, list, view, cancel, and mark as dispensed.
 Integrated with pharmacy inventory and audit logging.
 """
-from typing import List, Optional
-from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel
-from app.api.deps import get_current_user, RoleChecker
-from app.models.user import User
-from app.models.prescription import Prescription, PrescribedMedication
+from datetime import UTC, datetime, timedelta
+
+from app.api.deps import RoleChecker
 from app.models.audit import AuditLog
 from app.models.notification import Notification
+from app.models.prescription import PrescribedMedication, Prescription
+from app.models.user import User
 from app.schemas.prescriptions import (
-    PrescriptionCreate, PrescriptionResponse, PrescribedMedicationIn,
-    DrugInteractionWarning, ValidateRequest, PrescriptionRenewRequest
+    DrugInteractionWarning,
+    PrescriptionCreate,
+    PrescriptionRenewRequest,
+    PrescriptionResponse,
+    ValidateRequest,
 )
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 router = APIRouter()
 
-# ─── Inline Schemas (kept for backward compat — canonical source is schemas/prescriptions.py) ──
-
-class PrescribedMedicationIn(BaseModel):
-    medicine_name: str
-    medicine_id: Optional[str] = None
-    dosage: str
-    frequency: str
-    duration_days: int
-    route: str = "oral"
-    special_instructions: Optional[str] = None
-
-
-class PrescriptionCreate(BaseModel):
-    patient_id: str
-    appointment_id: Optional[str] = None
-    medications: List[PrescribedMedicationIn]
-    diagnosis: Optional[str] = None
-    notes: Optional[str] = None
-    is_renewable: bool = False
-    max_renewals: int = 0
-    valid_days: int = 30                  # Prescription valid for N days from issue
-
-
-class PrescriptionResponse(BaseModel):
-    id: Optional[str] = None
-    patient_id: str
-    doctor_id: str
-    appointment_id: Optional[str] = None
-    medications: List[dict]
-    diagnosis: Optional[str] = None
-    notes: Optional[str] = None
-    status: str
-    is_renewable: bool
-    issued_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class DrugInteractionWarning(BaseModel):
-    severity: str          # "critical" | "moderate" | "low"
-    drug_a: str
-    drug_b: str
-    description: str
-
-
-class ValidateRequest(BaseModel):
-    medications: List[PrescribedMedicationIn]
-    patient_allergies: Optional[List[str]] = None
-
-
 # ─── Known Drug Interaction Rules (simplified rule engine) ───────────────────
 
-_INTERACTIONS: List[dict] = [
+_INTERACTIONS: list[dict] = [
     {"a": "warfarin",    "b": "aspirin",       "severity": "critical",  "desc": "Increased bleeding risk — concurrent anticoagulant + antiplatelet use."},
     {"a": "warfarin",    "b": "ibuprofen",     "severity": "critical",  "desc": "NSAIDs potentiate warfarin anticoagulation, raising haemorrhage risk."},
     {"a": "metformin",   "b": "alcohol",       "severity": "moderate",  "desc": "Concurrent use increases risk of lactic acidosis."},
@@ -97,7 +47,7 @@ _ALLERGY_DRUG_MAP: dict = {
 }
 
 
-def _check_interactions(meds: List[str]) -> List[DrugInteractionWarning]:
+def _check_interactions(meds: list[str]) -> list[DrugInteractionWarning]:
     """Return interaction warnings for the given list of medicine names."""
     warnings = []
     meds_lower = [m.lower() for m in meds]
@@ -114,7 +64,7 @@ def _check_interactions(meds: List[str]) -> List[DrugInteractionWarning]:
     return warnings
 
 
-def _check_allergies(meds: List[str], allergies: List[str]) -> List[dict]:
+def _check_allergies(meds: list[str], allergies: list[str]) -> list[dict]:
     """Return allergy-contraindication warnings."""
     alerts = []
     meds_lower = [m.lower() for m in meds]
@@ -135,30 +85,6 @@ def _check_allergies(meds: List[str], allergies: List[str]) -> List[dict]:
 
 # ─── Endpoints ───────────────────────────────────────────────────────────────
 
-@router.post("/validate", summary="Validate medications for drug interactions")
-async def validate_medications(
-    payload: ValidateRequest,
-    current_user: User = Depends(get_current_user),
-):
-    """
-    AI drug-interaction and allergy-contraindication check.
-    Returns severity-rated warnings before prescription is finalised.
-    """
-    med_names = [m.medicine_name for m in payload.medications]
-    interaction_warnings = _check_interactions(med_names)
-    allergy_alerts = _check_allergies(med_names, payload.patient_allergies or [])
-    is_safe = len(interaction_warnings) == 0 and len(allergy_alerts) == 0
-    warnings_dump = [w.model_dump() for w in interaction_warnings]
-    return {
-        "valid": is_safe,
-        "safe": is_safe,
-        "interactions": warnings_dump,
-        "interaction_warnings": warnings_dump,
-        "allergy_alerts": allergy_alerts,
-        "medications_checked": med_names,
-    }
-
-
 @router.get("/alerts", summary="Get expiring or flagged prescription alerts")
 async def get_prescription_alerts(
     current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "pharmacist"])),
@@ -168,7 +94,7 @@ async def get_prescription_alerts(
       - Expiring within 3 days (status=ACTIVE)
       - Already expired but not yet updated
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     soon = now + timedelta(days=3)
 
     expiring = await Prescription.find({
@@ -197,13 +123,13 @@ async def get_prescription_alerts(
     }
 
 
-@router.get("/", response_model=List[PrescriptionResponse], summary="List prescriptions")
+@router.get("/", response_model=list[PrescriptionResponse], summary="List prescriptions")
 async def list_prescriptions(
-    patient_id: Optional[str] = Query(None),
-    status_filter: Optional[str] = Query(None, alias="status"),
+    patient_id: str | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
     limit: int = Query(50, ge=1, le=200),
     current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "pharmacist", "patient"])),
-) -> List[PrescriptionResponse]:
+) -> list[PrescriptionResponse]:
     """List prescriptions with optional filters by patient and status."""
     query: dict = {}
     if patient_id:
@@ -231,7 +157,7 @@ async def create_prescription(
         for med in prescription_in.medications
     ]
 
-    issued_at = datetime.now(timezone.utc)
+    issued_at = datetime.now(UTC)
     expires_at = issued_at + timedelta(days=prescription_in.valid_days)
 
     prescription = Prescription(
@@ -322,7 +248,7 @@ async def dispense_prescription(
     if prescription.status != "ACTIVE":
         raise HTTPException(status_code=400, detail=f"Cannot dispense a prescription with status '{prescription.status}'")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     for med in prescription.medications:
         med.is_dispensed = True
         med.dispensed_at = now
@@ -375,7 +301,7 @@ async def renew_prescription(
             detail=f"Maximum renewals ({prescription.max_renewals}) already reached"
         )
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     prescription.renewal_count += 1
     prescription.expires_at = now + timedelta(days=renew_request.valid_days)
     if renew_request.notes:
@@ -408,7 +334,7 @@ async def renew_prescription(
 @router.post("/{prescription_id}/cancel", response_model=PrescriptionResponse, summary="Cancel prescription")
 async def cancel_prescription(
     prescription_id: str,
-    reason: Optional[str] = Query(None),
+    reason: str | None = Query(None),
     current_user: User = Depends(RoleChecker(["admin", "doctor"])),
 ) -> PrescriptionResponse:
     """Cancel an active prescription."""
@@ -419,7 +345,7 @@ async def cancel_prescription(
         raise HTTPException(status_code=400, detail="Only ACTIVE prescriptions can be cancelled")
 
     prescription.status = "CANCELLED"
-    prescription.cancelled_at = datetime.now(timezone.utc)
+    prescription.cancelled_at = datetime.now(UTC)
     prescription.cancelled_reason = reason
     await prescription.save()
 
@@ -494,7 +420,7 @@ async def validate_medications(req: ValidateRequest):
       2. Patient Documented Allergies (cross-reactive drug classes).
     Returns safety status, detected interaction warnings, and clinical recommendations.
     """
-    warnings: List[dict] = []
+    warnings: list[dict] = []
     med_names = [m.medicine_name.lower() for m in req.medications]
     patient_allergies = [a.lower().strip() for a in (req.patient_allergies or [])]
 
@@ -556,42 +482,6 @@ async def validate_medications(req: ValidateRequest):
         "warnings": warnings,
         "interaction_warnings": [w for w in warnings if w.get("type") == "DRUG_DRUG_INTERACTION"],
         "allergy_alerts": [w for w in warnings if "ALLERGY" in str(w.get("type", ""))],
-    }
-
-
-
-@router.get("/alerts", summary="Get active hospital prescription safety alerts")
-async def get_prescription_alerts():
-    """Returns aggregated prescription safety warnings, expired items, and active alerts."""
-    return {
-        "total_alerts": 3,
-        "critical_alerts": 1,
-        "alerts": [
-            {
-                "id": "ALT-001",
-                "severity": "critical",
-                "title": "Warfarin & Aspirin Concomitant Prescriptions",
-                "department": "Cardiology",
-                "message": "Patient P-0041 has concurrent orders for Warfarin and Aspirin. Clinical review recommended.",
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            },
-            {
-                "id": "ALT-002",
-                "severity": "moderate",
-                "title": "High Dose Metformin in Renal Patient",
-                "department": "Nephrology",
-                "message": "Metformin 1000mg prescribed to P-0051 with eGFR < 45 ml/min.",
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            },
-            {
-                "id": "ALT-003",
-                "severity": "warning",
-                "title": "Prescription Validity Expiring",
-                "department": "General Medicine",
-                "message": "3 active antibiotic prescriptions reach 30-day expiry limit in 24 hours.",
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            }
-        ]
     }
 
 

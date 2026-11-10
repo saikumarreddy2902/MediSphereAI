@@ -1,6 +1,7 @@
 """Billing Intelligence Agent — detects anomalies and tracks revenue."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import generate_bills, rand_float
+
 
 class BillingIntelligenceAgent(BaseAgent):
     agent_name = "Billing Intelligence Agent"

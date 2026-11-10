@@ -1,10 +1,12 @@
 """
 MediSphere AI — Global Exception Handlers
 """
+import traceback
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from loguru import logger
-import traceback
+
 
 async def global_exception_handler(request: Request, exc: Exception):
     """
@@ -13,7 +15,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     """
     logger.error(
         f"Unhandled Exception on {request.method} {request.url.path}\n"
-        f"Error: {str(exc)}\n"
+        f"Error: {exc!s}\n"
         f"Traceback: {traceback.format_exc()}"
     )
     

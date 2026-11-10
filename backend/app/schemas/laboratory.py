@@ -3,8 +3,8 @@ MediSphere AI — Laboratory Schemas
 
 Request/response Pydantic models for Laboratory diagnostic order endpoints.
 """
-from typing import Optional
 from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -22,17 +22,17 @@ class LabOrderCreate(BaseModel):
 
 class LabOrderUpdate(BaseModel):
     """Schema for updating laboratory test status, result, or flags."""
-    status: Optional[str] = Field(
+    status: str | None = Field(
         None,
         pattern="^(ordered|sample_collected|in_progress|completed|critical_reported)$"
     )
-    priority: Optional[str] = Field(None, pattern="^(low|medium|high|critical)$")
-    is_critical: Optional[bool] = None
-    turnaround_hours: Optional[float] = Field(None, ge=0)
-    result_available: Optional[bool] = None
-    result_value: Optional[str] = None    # Recorded result value (e.g. "12.5 g/dL")
-    result_unit: Optional[str] = None     # Unit of measurement (e.g. "g/dL")
-    result_notes: Optional[str] = None    # Pathologist notes
+    priority: str | None = Field(None, pattern="^(low|medium|high|critical)$")
+    is_critical: bool | None = None
+    turnaround_hours: float | None = Field(None, ge=0)
+    result_available: bool | None = None
+    result_value: str | None = None    # Recorded result value (e.g. "12.5 g/dL")
+    result_unit: str | None = None     # Unit of measurement (e.g. "g/dL")
+    result_notes: str | None = None    # Pathologist notes
 
 
 class LabOrderResponse(BaseModel):
@@ -42,7 +42,7 @@ class LabOrderResponse(BaseModel):
     Uses `from_attributes=True` so Beanie ODM documents (which expose `.id`
     as a `PydanticObjectId`) are automatically coerced to `str`.
     """
-    id: Optional[str] = None
+    id: str | None = None
     order_id: str
     patient_id: str
     patient_name: str
@@ -58,10 +58,10 @@ class LabOrderResponse(BaseModel):
     cost: float
     ordered_by: str
     result_available: bool
-    result_value: Optional[str] = None
-    result_unit: Optional[str] = None
-    result_notes: Optional[str] = None
-    created_at: Optional[datetime] = None
+    result_value: str | None = None
+    result_unit: str | None = None
+    result_notes: str | None = None
+    created_at: datetime | None = None
 
     model_config = {
         "populate_by_name": True,

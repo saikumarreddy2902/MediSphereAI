@@ -3,6 +3,7 @@ MediSphere AI — Health Endpoint Tests
 """
 from fastapi.testclient import TestClient
 
+
 def test_health_endpoint(client: TestClient):
     """Test the load balancer health check."""
     response = client.get("/health")

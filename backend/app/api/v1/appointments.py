@@ -1,17 +1,18 @@
 """Appointments API with AI Agent Dynamic Multi-Department Doctor Allocation Engine"""
-from fastapi import APIRouter, Query, HTTPException, status, Depends
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
-from datetime import datetime, date, timezone
 import random
-from app.mock.data_generator import generate_appointments
+from datetime import UTC, date, datetime
+from typing import Any
+
 from app.api.deps import RoleChecker
+from app.mock.data_generator import generate_appointments
 from app.models.user import User
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 
 # ─── Doctor Availability Registry by Department ──────────────────────────────
-DEPARTMENT_DOCTORS: Dict[str, List[Dict[str, Any]]] = {
+DEPARTMENT_DOCTORS: dict[str, list[dict[str, Any]]] = {
     "Cardiology": [
         {"id": "DOC-CARD-01", "name": "Dr. Priya Sharma", "specialty": "Interventional Cardiology", "shift": "DAY", "working_hours": ["09:00", "13:00", "14:00", "17:00"], "active_patients": 3},
         {"id": "DOC-CARD-02", "name": "Dr. Arun Kumar", "specialty": "Electrophysiology & Heart Failure", "shift": "DAY", "working_hours": ["10:00", "14:00", "15:00", "18:00"], "active_patients": 5},
@@ -66,18 +67,18 @@ DEPARTMENT_DOCTORS: Dict[str, List[Dict[str, Any]]] = {
 
 
 # In-memory dynamic appointments store
-DYNAMIC_APPOINTMENTS: List[Dict[str, Any]] = []
+DYNAMIC_APPOINTMENTS: list[dict[str, Any]] = []
 
 # ─── Request & Response Models ────────────────────────────────────────────────
 class AgentBookingRequest(BaseModel):
     patient_id: str = Field(..., examples=["P-0041"], description="Hospital Patient Number (MR No.)")
-    patient_name: Optional[str] = Field(None, examples=["Rajesh Kumar"], description="Auto-resolved from patient_id if omitted")
-    department: Optional[str] = Field(None, examples=["Cardiology"])
-    departments: Optional[List[str]] = Field(None, examples=[["Cardiology", "Orthopedics"]])
+    patient_name: str | None = Field(None, examples=["Rajesh Kumar"], description="Auto-resolved from patient_id if omitted")
+    department: str | None = Field(None, examples=["Cardiology"])
+    departments: list[str] | None = Field(None, examples=[["Cardiology", "Orthopedics"]])
     appointment_date: str = Field(..., examples=["2026-10-06"])
-    time_window: Optional[str] = Field("ANY", description="ANY, MORNING, AFTERNOON, EVENING")
-    reason: Optional[str] = Field("General consultation and routine assessment", examples=["Persistent chest tightness and joint pain"])
-    appointment_type: Optional[str] = Field("IN_PERSON", examples=["IN_PERSON"])
+    time_window: str | None = Field("ANY", description="ANY, MORNING, AFTERNOON, EVENING")
+    reason: str | None = Field("General consultation and routine assessment", examples=["Persistent chest tightness and joint pain"])
+    appointment_type: str | None = Field("IN_PERSON", examples=["IN_PERSON"])
 
 class AgentBookingResponse(BaseModel):
     appointment_id: str
@@ -100,22 +101,22 @@ class MultiDepartmentBookingResponse(BaseModel):
     patient_name: str
     patient_id: str
     appointment_date: str
-    appointments: List[AgentBookingResponse]
+    appointments: list[AgentBookingResponse]
     overall_summary: str
 
 class PatientLookupResponse(BaseModel):
     patient_id: str
     patient_name: str
-    age: Optional[int] = None
-    gender: Optional[str] = None
-    blood_group: Optional[str] = None
-    contact_number: Optional[str] = None
-    department_history: Optional[List[str]] = None
+    age: int | None = None
+    gender: str | None = None
+    blood_group: str | None = None
+    contact_number: str | None = None
+    department_history: list[str] | None = None
     found: bool = True
 
 # ─── Static Patient Registry (Hospital MR Numbers) ───────────────────────────
 # In production this maps to the MongoDB Patient collection
-HOSPITAL_PATIENT_REGISTRY: Dict[str, Dict[str, Any]] = {
+HOSPITAL_PATIENT_REGISTRY: dict[str, dict[str, Any]] = {
     "P-0041": {"name": "Rajesh Kumar",    "age": 47, "gender": "Male",   "blood_group": "B+", "contact": "+91-98765-00041", "dept_history": ["Cardiology", "General Medicine"]},
     "P-0042": {"name": "Priya Sharma",    "age": 33, "gender": "Female", "blood_group": "O+", "contact": "+91-98765-00042", "dept_history": ["Neurology"]},
     "P-0043": {"name": "Arjun Mehta",     "age": 55, "gender": "Male",   "blood_group": "A+", "contact": "+91-98765-00043", "dept_history": ["Orthopedics", "Surgery"]},
@@ -134,7 +135,7 @@ HOSPITAL_PATIENT_REGISTRY: Dict[str, Dict[str, Any]] = {
 }
 
 
-def _resolve_patient(patient_id: str) -> Dict[str, Any]:
+def _resolve_patient(patient_id: str) -> dict[str, Any]:
     """Resolve patient name & details from hospital patient number."""
     pid = patient_id.strip().upper()
     if pid in HOSPITAL_PATIENT_REGISTRY:
@@ -146,9 +147,9 @@ def _resolve_patient(patient_id: str) -> Dict[str, Any]:
 
 @router.get("/")
 async def list_appointments(
-    status: Optional[str] = None,
-    doctor: Optional[str] = None,
-    department: Optional[str] = None,
+    status: str | None = None,
+    doctor: str | None = None,
+    department: str | None = None,
     limit: int = Query(80, le=300),
     current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "staff"])),
 ):
@@ -196,9 +197,10 @@ async def lookup_patient_by_id(
 
     # Fallback to MongoDB Patient query
     try:
+        from datetime import date
+
         from app.models.hospital import Patient
         from bson import ObjectId
-        from datetime import date
         db_pat = None
         if ObjectId.is_valid(pid):
             try:
@@ -255,7 +257,7 @@ async def lookup_patient_by_id(
 @router.get("/doctors-availability")
 async def get_doctors_availability(
     department: str = Query(..., example="Cardiology"),
-    date_str: Optional[str] = Query(None, example="2026-10-06")
+    date_str: str | None = Query(None, example="2026-10-06")
 ):
     """Retrieve on-duty doctors and their available time slots for the chosen department & date."""
     dept_key = next((k for k in DEPARTMENT_DOCTORS if k.lower() == department.lower()), None)
@@ -342,7 +344,7 @@ async def agent_book_appointment(
         "appointment_type": req.appointment_type or "IN_PERSON",
         "ai_agent_allocation_summary": ai_summary,
         "ai_confidence_score": 0.98,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
 
     DYNAMIC_APPOINTMENTS.insert(0, new_appt)
@@ -390,7 +392,7 @@ async def agent_book_multi_departments(req: AgentBookingRequest):
         "09:15 AM", "10:45 AM", "12:15 PM", "02:00 PM", "03:30 PM", "05:00 PM"
     ]
 
-    booked_appointments: List[AgentBookingResponse] = []
+    booked_appointments: list[AgentBookingResponse] = []
 
     import uuid
     for idx, dept_name in enumerate(dept_list):
@@ -479,14 +481,14 @@ async def get_appointment_stats():
 
 
 class ReassignAppointmentRequest(BaseModel):
-    department: Optional[str] = None
-    doctor_name: Optional[str] = None
-    doctor_id: Optional[str] = None
-    doctor_specialty: Optional[str] = None
-    appointment_date: Optional[str] = None
-    appointment_time: Optional[str] = None
-    status: Optional[str] = None
-    reason: Optional[str] = None
+    department: str | None = None
+    doctor_name: str | None = None
+    doctor_id: str | None = None
+    doctor_specialty: str | None = None
+    appointment_date: str | None = None
+    appointment_time: str | None = None
+    status: str | None = None
+    reason: str | None = None
 
 
 @router.post("/{appointment_id}/reassign")
@@ -497,7 +499,7 @@ async def reassign_appointment(appointment_id: str, req: ReassignAppointmentRequ
     Enables attending doctors and department coordinators to transfer an appointment
     to a different doctor within the same department or cross-transfer to another department.
     """
-    found_appt: Optional[dict[str, Any]] = None
+    found_appt: dict[str, Any] | None = None
     for a in DYNAMIC_APPOINTMENTS:
         if a.get("id") == appointment_id or a.get("appointment_id") == appointment_id:
             found_appt = a
@@ -526,7 +528,7 @@ async def reassign_appointment(appointment_id: str, req: ReassignAppointmentRequ
         target_doc_name = str(found_appt.get("doctor_name")) if (found_appt and found_appt.get("doctor_name")) else "Attending Specialist"
 
     date_val = req.appointment_date or (found_appt.get("appointment_date") if found_appt else None)
-    target_date: str = str(date_val) if date_val else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    target_date: str = str(date_val) if date_val else datetime.now(UTC).strftime("%Y-%m-%d")
 
     time_val = req.appointment_time or (found_appt.get("appointment_time") if found_appt else None)
     target_time: str = str(time_val) if time_val else "10:30 AM"

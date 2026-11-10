@@ -1,10 +1,11 @@
 """
 MediSphere AI — Operations Models (Appointments, Beds, Emergency)
 """
-from typing import Optional, Dict, Any
 from datetime import datetime
-from beanie import Indexed
+from typing import Any
+
 from app.models.base import BaseDocument
+from beanie import Indexed
 
 
 class Appointment(BaseDocument):
@@ -14,7 +15,7 @@ class Appointment(BaseDocument):
     appointment_date: Indexed(datetime)
     reason: str
     type: str = "GENERAL"  # GENERAL, FOLLOW_UP, SURGERY
-    notes: Optional[str] = None
+    notes: str | None = None
     
     class Settings:
         name = "appointments"
@@ -29,8 +30,8 @@ class Bed(BaseDocument):
     department_id: str
     type: str = "GENERAL"  # GENERAL, ICU, OXYGEN, VENTILATOR
     is_occupied: bool = False
-    current_patient_id: Optional[str] = None
-    last_maintenance_date: Optional[datetime] = None
+    current_patient_id: str | None = None
+    last_maintenance_date: datetime | None = None
     
     class Settings:
         name = "beds"
@@ -40,13 +41,13 @@ class Bed(BaseDocument):
 
 
 class EmergencyCase(BaseDocument):
-    patient_id: Optional[str] = None  # Might be unknown initially
+    patient_id: str | None = None  # Might be unknown initially
     triage_level: int = 1  # 1 (Resuscitation) to 5 (Non-urgent)
     arrival_time: Indexed(datetime)
     symptoms: str
-    vitals: Dict[str, Any] = {}
-    assigned_doctor_id: Optional[str] = None
-    outcome: Optional[str] = None  # ADMITTED, DISCHARGED, DECEASED, TRANSFERRED
+    vitals: dict[str, Any] = {}
+    assigned_doctor_id: str | None = None
+    outcome: str | None = None  # ADMITTED, DISCHARGED, DECEASED, TRANSFERRED
     
     class Settings:
         name = "emergency_cases"

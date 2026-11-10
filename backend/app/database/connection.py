@@ -4,29 +4,29 @@ MediSphere AI — Enterprise Database Connection Manager
 Module: Database Gateway
 Description: Manages asynchronous Motor client pools for MongoDB Atlas and initializes Beanie Object-Document Mapper (ODM).
 """
-from typing import Optional
-from motor.motor_asyncio import AsyncIOMotorClient
-from beanie import init_beanie
-from app.core.config import settings
 
-# Import domain document models for Beanie ODM registration
-from app.models.user import User, Role, Permission
-from app.models.hospital import Patient, Doctor, Department
-from app.models.operations import Appointment, Bed, EmergencyCase
-from app.models.resources import Medicine, MedicineInventory, Equipment
+from app.core.config import settings
+from app.models.audit import AuditLog
 from app.models.finance import Bill, InsuranceClaim
+from app.models.hospital import Department, Doctor, Patient
 from app.models.laboratory import LabOrder
 from app.models.medical_record import MedicalRecord
-from app.models.prescription import Prescription
 from app.models.notification import Notification
-from app.models.audit import AuditLog
+from app.models.operations import Appointment, Bed, EmergencyCase
+from app.models.prescription import Prescription
+from app.models.resources import Equipment, Medicine, MedicineInventory
+
+# Import domain document models for Beanie ODM registration
+from app.models.user import Permission, Role, User
+from beanie import init_beanie
+from motor.motor_asyncio import AsyncIOMotorClient
 
 
 class Database:
     """
     Singleton database container holding the active Motor AsyncIOMotorClient connection instance.
     """
-    client: Optional[AsyncIOMotorClient] = None
+    client: AsyncIOMotorClient | None = None
 
 
 db = Database()
@@ -44,7 +44,7 @@ async def connect_to_mongo() -> None:
     Raises:
       PyMongoError: If connection, authentication, or network ping fails.
     """
-    print(f"Connecting to MongoDB Atlas...")
+    print("Connecting to MongoDB Atlas...")
     db.client = AsyncIOMotorClient(settings.MONGODB_URI, serverSelectionTimeoutMS=2000)
     
     # Ping admin command to verify connection health

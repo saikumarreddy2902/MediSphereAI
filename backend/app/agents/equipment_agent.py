@@ -1,6 +1,7 @@
 """Medical Equipment Agent — monitors utilization and predicts failures."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import EQUIPMENT_LIST
+
 
 class MedicalEquipmentAgent(BaseAgent):
     agent_name = "Medical Equipment Agent"

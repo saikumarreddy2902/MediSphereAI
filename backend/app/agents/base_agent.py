@@ -2,11 +2,11 @@
 MediSphere AI — Base Agent Abstract Class
 All 14 AI agents inherit from this class.
 """
-from abc import ABC, abstractmethod
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
-import asyncio
+import builtins
 import uuid
+from abc import ABC, abstractmethod
+from datetime import UTC, datetime
+from typing import Any
 
 
 class AgentStatus:
@@ -20,20 +20,20 @@ class AgentOutput:
     def __init__(
         self,
         agent_name: str,
-        recommendations: List[Dict],
-        alerts: List[Dict],
-        insights: Dict[str, Any],
-        metadata: Optional[Dict] = None,
+        recommendations: list[builtins.dict],
+        alerts: list[builtins.dict],
+        insights: builtins.dict[str, Any],
+        metadata: builtins.dict | None = None,
     ):
         self.agent_name = agent_name
         self.recommendations = recommendations
         self.alerts = alerts
         self.insights = insights
         self.metadata = metadata or {}
-        self.generated_at = datetime.now(timezone.utc).isoformat()
+        self.generated_at = datetime.now(UTC).isoformat()
         self.run_id = str(uuid.uuid4())
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> builtins.dict[str, Any]:
         return {
             "agent_name": self.agent_name,
             "recommendations": self.recommendations,
@@ -44,11 +44,11 @@ class AgentOutput:
             "run_id": self.run_id,
         }
 
-    def model_dump(self, **kwargs) -> Dict[str, Any]:
+    def model_dump(self, **kwargs) -> builtins.dict[str, Any]:
         """Pydantic v2 compatibility method."""
         return self.to_dict()
 
-    def dict(self, **kwargs) -> Dict[str, Any]:
+    def dict(self, **kwargs) -> builtins.dict[str, Any]:
         """Pydantic v1 compatibility method."""
         return self.to_dict()
 
@@ -71,8 +71,8 @@ class BaseAgent(ABC):
 
     def __init__(self):
         self.status: str = AgentStatus.IDLE
-        self.last_run: Optional[datetime] = None
-        self.last_output: Optional[AgentOutput] = None
+        self.last_run: datetime | None = None
+        self.last_output: AgentOutput | None = None
         self.run_count: int = 0
         self.error_count: int = 0
         self.total_runtime_ms: int = 0
@@ -91,19 +91,18 @@ class BaseAgent(ABC):
             # llm = Ollama(model="qwen3:8b", base_url=settings.OLLAMA_BASE_URL)
             # response = llm.invoke(self.build_prompt(data))
         """
-        pass
 
     async def run(self) -> AgentOutput:
         """Execute the agent analysis cycle with timing and error handling."""
         self.status = AgentStatus.RUNNING
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         try:
             output = await self.analyze()
             self.last_output = output
-            self.last_run = datetime.now(timezone.utc)
+            self.last_run = datetime.now(UTC)
             self.run_count += 1
-            elapsed = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+            elapsed = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
             self.total_runtime_ms += elapsed
             self.status = AgentStatus.IDLE
             return output
@@ -113,7 +112,7 @@ class BaseAgent(ABC):
             self.error_count += 1
             raise e
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Return current agent health and metrics."""
         avg_runtime = self.total_runtime_ms // max(1, self.run_count)
         return {
@@ -128,7 +127,7 @@ class BaseAgent(ABC):
             "health_score": max(0, 100 - (self.error_count * 10)),
         }
 
-    def build_prompt(self, data: Dict) -> str:
+    def build_prompt(self, data: dict) -> str:
         """Build a structured prompt for LLM analysis."""
         return f"""
 You are the {self.agent_name} for MediSphere AI Hospital Operations Platform.
@@ -152,7 +151,7 @@ Format your response as structured JSON.
         description: str,
         priority: str = "medium",
         impact: str = "",
-    ) -> Dict:
+    ) -> dict:
         return {
             "id": str(uuid.uuid4()),
             "agent": self.agent_name,
@@ -161,7 +160,7 @@ Format your response as structured JSON.
             "description": description,
             "priority": priority,
             "impact": impact,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
 
     def format_alert(
@@ -169,24 +168,26 @@ Format your response as structured JSON.
         title: str,
         message: str,
         severity: str = "warning",
-    ) -> Dict:
+    ) -> dict:
         return {
             "id": str(uuid.uuid4()),
             "agent": self.agent_name,
             "title": title,
             "message": message,
             "severity": severity,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
-    async def query_llm_rag(self, current_data: Dict) -> AgentOutput:
+    async def query_llm_rag(self, current_data: dict) -> AgentOutput:
         """
         Queries Ollama LLM augmented with historical context from Qdrant Vector DB.
         """
+        import json
+
+        import httpx
+
         from app.core.config import settings
         from app.core.vector_store import vector_store
-        import httpx
-        import json
 
         # 1. Search past insights in Qdrant
         rag_context = ""

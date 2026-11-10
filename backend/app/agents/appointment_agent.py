@@ -1,6 +1,7 @@
 """Appointment Optimization Agent — optimizes scheduling and predicts no-shows."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import generate_appointments
+
 
 class AppointmentOptimizationAgent(BaseAgent):
     agent_name = "Appointment Optimization Agent"

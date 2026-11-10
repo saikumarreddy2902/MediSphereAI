@@ -1,0 +1,53 @@
+#!/bin/sh
+# MediSphere AI — Enterprise Git Pre-Push Test & CI Gate
+# Prevents git push if backend tests or frontend typecheck/build checks fail.
+
+echo "========================================================"
+echo "🚀 Running MediSphere AI Pre-Push Test & Enterprise CI Gate"
+echo "========================================================"
+
+# 1. Run Backend Pytest Suite
+echo "🧪 Running Backend Test Suite (Pytest)..."
+if command -v python >/dev/null 2>&1; then
+    python -m pytest backend/tests/ -v -q --asyncio-mode=auto
+    TEST_RESULT=$?
+    if [ $TEST_RESULT -ne 0 ]; then
+        echo ""
+        echo "❌ [TEST FAILURE] One or more backend tests failed!"
+        echo "🚫 Git push ABORTED. Fix failing test cases before pushing to remote."
+        exit 1
+    fi
+    echo "✅ All backend test cases passed!"
+elif command -v uv >/dev/null 2>&1; then
+    uv run pytest backend/tests/ -v -q --asyncio-mode=auto
+    TEST_RESULT=$?
+    if [ $TEST_RESULT -ne 0 ]; then
+        echo ""
+        echo "❌ [TEST FAILURE] One or more backend tests failed!"
+        echo "🚫 Git push ABORTED. Fix failing test cases before pushing to remote."
+        exit 1
+    fi
+    echo "✅ All backend test cases passed!"
+else
+    echo "⚠️ Python not found in PATH, skipping local pytest execution."
+fi
+
+# 2. Frontend TypeScript Check
+echo "🔍 Running Frontend TypeScript Type Check..."
+if [ -d "frontend/node_modules" ] && command -v npm >/dev/null 2>&1; then
+    (cd frontend && npm run typecheck)
+    TSC_RESULT=$?
+    if [ $TSC_RESULT -ne 0 ]; then
+        echo ""
+        echo "❌ [TYPECHECK FAILURE] Frontend TypeScript compilation errors detected!"
+        echo "🚫 Git push ABORTED. Resolve TypeScript errors before pushing to remote."
+        exit 1
+    fi
+    echo "✅ Frontend TypeScript check passed!"
+fi
+
+echo "========================================================"
+echo "✅ All Pre-Push Quality & Security Gates Passed! Proceeding with push."
+echo "========================================================"
+exit 0
+

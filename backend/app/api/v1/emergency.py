@@ -1,12 +1,11 @@
 """
 MediSphere AI — Emergency API
 """
-from typing import Dict, Any
-from fastapi import APIRouter, Depends, status
-from pydantic import BaseModel
-from app.services.emergency import EmergencyService
 from app.api.deps import RoleChecker
 from app.models.user import User
+from app.services.emergency import EmergencyService
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 router = APIRouter()
 

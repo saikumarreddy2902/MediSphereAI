@@ -2,9 +2,9 @@
 MediSphere AI — Resource Service Unit Tests (Pharmacy & Equipment)
 """
 import pytest
+from app.models.resources import Equipment, Medicine
+from app.services.resources import EquipmentService, PharmacyService
 from motor.motor_asyncio import AsyncIOMotorClient
-from app.services.resources import PharmacyService, EquipmentService
-from app.models.resources import Medicine, Equipment
 
 
 @pytest.mark.asyncio

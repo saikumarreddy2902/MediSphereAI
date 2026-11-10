@@ -5,11 +5,11 @@ Pushes live hospital metrics to connected frontend clients every 5 seconds.
 """
 import asyncio
 import json
-from datetime import datetime, timezone
-from typing import Set
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from app.models.operations import Bed, EmergencyCase
+from datetime import UTC, datetime
+
 from app.models.hospital import Patient
+from app.models.operations import Bed, EmergencyCase
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ class ConnectionManager:
     """Manages active WebSocket connections with broadcast support."""
 
     def __init__(self):
-        self.active_connections: Set[WebSocket] = set()
+        self.active_connections: set[WebSocket] = set()
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -63,7 +63,7 @@ async def _collect_telemetry() -> dict:
 
         return {
             "type": "telemetry",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "beds": {
                 "total": total_beds,
                 "occupied": occupied_beds,
@@ -82,7 +82,7 @@ async def _collect_telemetry() -> dict:
     except Exception as e:
         return {
             "type": "telemetry",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "error": str(e),
         }
 
@@ -134,7 +134,7 @@ async def department_cockpit_websocket(websocket: WebSocket, department_name: st
         await websocket.send_text(json.dumps({
             "type": "CONNECTION_ESTABLISHED",
             "department": dept_name,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "message": f"Real-time event stream connected for {dept_name} Cockpit.",
         }))
 
@@ -147,7 +147,7 @@ async def department_cockpit_websocket(websocket: WebSocket, department_name: st
                 payload = {
                     "type": "EMERGENCY_ESCALATION",
                     "department": dept_name,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "alert_id": f"ALERT-LIVE-{tick}",
                     "severity": "critical" if tick % 6 == 0 else "high",
                     "patient_name": f"Patient ER-{100 + tick}",
@@ -159,7 +159,7 @@ async def department_cockpit_websocket(websocket: WebSocket, department_name: st
                 payload = {
                     "type": "QUEUE_SYNC",
                     "department": dept_name,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "active_queue_count": 4 + (tick % 5),
                     "bed_occupancy_pct": 74.0 + (tick % 6),
                     "message": "Queue synchronized with hospital central triage.",
@@ -168,7 +168,7 @@ async def department_cockpit_websocket(websocket: WebSocket, department_name: st
                 payload = {
                     "type": "HEARTBEAT",
                     "department": dept_name,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "status": "STREAMING",
                 }
 

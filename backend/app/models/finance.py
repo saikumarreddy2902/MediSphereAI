@@ -1,11 +1,11 @@
 """
 MediSphere AI — Finance Models (Billing & Insurance)
 """
-from typing import List, Optional
 from datetime import datetime
-from beanie import Indexed
-from pydantic import BaseModel, Field
+
 from app.models.base import BaseDocument
+from beanie import Indexed
+from pydantic import BaseModel
 
 
 class InvoiceItem(BaseModel):
@@ -18,8 +18,8 @@ class InvoiceItem(BaseModel):
 class Bill(BaseDocument):
     invoice_number: Indexed(str, unique=True)
     patient_id: Indexed(str)
-    admission_id: Optional[str] = None  # Link to an admission if applicable
-    items: List[InvoiceItem] = []
+    admission_id: str | None = None  # Link to an admission if applicable
+    items: list[InvoiceItem] = []
     subtotal: float
     tax: float
     discount: float = 0.0
@@ -42,11 +42,11 @@ class InsuranceClaim(BaseDocument):
     provider_name: str
     policy_number: str
     claim_amount: float
-    approved_amount: Optional[float] = None
+    approved_amount: float | None = None
     claim_status: Indexed(str) = "SUBMITTED"  # SUBMITTED, IN_REVIEW, APPROVED, REJECTED
-    rejection_reason: Optional[str] = None
+    rejection_reason: str | None = None
     submission_date: datetime
-    resolution_date: Optional[datetime] = None
+    resolution_date: datetime | None = None
     
     class Settings:
         name = "insurance_claims"

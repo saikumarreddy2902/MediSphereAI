@@ -5,12 +5,17 @@ Business logic for aggregating, computing, and caching hospital-wide
 analytics metrics. Provides real MongoDB aggregation queries as an
 alternative to the mock data generator used in earlier development.
 """
-from typing import List, Dict, Any, Optional
-from datetime import datetime, timezone, timedelta
+from typing import Any
+
 from app.repositories.core import (
-    PatientRepository, BedRepository, AppointmentRepository,
-    EmergencyCaseRepository, BillRepository, InsuranceClaimRepository,
-    LabOrderRepository, EquipmentRepository,
+    AppointmentRepository,
+    BedRepository,
+    BillRepository,
+    EmergencyCaseRepository,
+    EquipmentRepository,
+    InsuranceClaimRepository,
+    LabOrderRepository,
+    PatientRepository,
 )
 
 
@@ -32,7 +37,7 @@ class AnalyticsService:
         self._lab_orders  = LabOrderRepository()
         self._equipment   = EquipmentRepository()
 
-    async def get_hospital_kpis(self) -> Dict[str, Any]:
+    async def get_hospital_kpis(self) -> dict[str, Any]:
         """Compute the live hospital KPI snapshot."""
         total_beds   = await self._beds.count()
         occupied     = await self._beds.count({"is_occupied": True})
@@ -60,7 +65,7 @@ class AnalyticsService:
             "insurance_approval_rate": 91.2,                      # placeholder
         }
 
-    async def get_bed_summary(self) -> Dict[str, Any]:
+    async def get_bed_summary(self) -> dict[str, Any]:
         """Return bed availability summary by ward."""
         total = await self._beds.count()
         occupied = await self._beds.count({"is_occupied": True})
@@ -84,7 +89,7 @@ class AnalyticsService:
             },
         }
 
-    async def get_lab_analytics(self) -> Dict[str, Any]:
+    async def get_lab_analytics(self) -> dict[str, Any]:
         """Aggregate lab order performance metrics."""
         total    = await self._lab_orders.count()
         completed = await self._lab_orders.count({"status": "completed"})
@@ -99,7 +104,7 @@ class AnalyticsService:
             "critical_pending": critical,
         }
 
-    async def get_financial_summary(self) -> Dict[str, Any]:
+    async def get_financial_summary(self) -> dict[str, Any]:
         """Return billing and insurance summary."""
         total_bills   = await self._bills.count()
         pending_bills = await self._bills.count(

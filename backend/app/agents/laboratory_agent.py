@@ -1,6 +1,7 @@
 """Laboratory Intelligence Agent — prioritizes lab orders and predicts delays."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import generate_lab_orders
+
 
 class LaboratoryIntelligenceAgent(BaseAgent):
     agent_name = "Laboratory Intelligence Agent"

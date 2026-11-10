@@ -1,5 +1,40 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+# MediSphere AI — Enterprise Git Pre-Commit Security & Quality Hook
+# Blocks any commit containing potential secrets, credentials, or syntax errors.
 
-echo "🔍 Running pre-commit DevSecOps checks..."
-cd backend && pytest tests/ -v
+echo "========================================================"
+echo "🛡️  Running MediSphere AI Pre-Commit Quality & Security Gate"
+echo "========================================================"
+
+# 1. Check for committed secrets / private keys
+echo "🔍 Checking for sensitive patterns and secrets in staged files..."
+LEAKED_FILES=$(git diff --cached -S"-----BEGIN" --name-only -- . ':!.husky' ':!scripts' 2>/dev/null)
+
+if [ -n "$LEAKED_FILES" ]; then
+    echo "❌ [SECURITY ALERT] Potential private keys or secrets detected in staged files:"
+    echo "$LEAKED_FILES"
+    echo "🚫 Commit ABORTED. Remove sensitive data before committing."
+    exit 1
+fi
+
+# 2. Check for staged .env files with secrets
+STAGED_ENV=$(git diff --cached --name-only | grep -E "(^|/)\.env($|\.local|\.production|\.staging)")
+if [ -n "$STAGED_ENV" ]; then
+    echo "❌ [SECURITY ALERT] Attempting to commit actual .env file:"
+    echo "$STAGED_ENV"
+    echo "🚫 Commit ABORTED. Only .env.example should be tracked in Git."
+    exit 1
+fi
+
+# 3. Python Lint Check on Backend (if python/ruff available)
+if command -v ruff >/dev/null 2>&1; then
+    echo "🧹 Running Ruff Python linter check..."
+    ruff check backend/ || {
+        echo "❌ [LINT FAILURE] Ruff linter found errors in backend/."
+        echo "💡 Run 'ruff check --fix backend/' to auto-fix, then stage changes."
+        exit 1
+    }
+fi
+
+echo "✅ Pre-commit quality and security gate passed successfully."
+exit 0

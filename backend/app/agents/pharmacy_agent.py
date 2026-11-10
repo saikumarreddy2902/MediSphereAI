@@ -1,6 +1,7 @@
 """Pharmacy Intelligence Agent — monitors inventory and predicts stock-outs."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import get_pharmacy_inventory
+
 
 class PharmacyIntelligenceAgent(BaseAgent):
     agent_name = "Pharmacy Intelligence Agent"

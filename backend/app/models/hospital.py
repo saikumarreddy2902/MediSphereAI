@@ -1,17 +1,16 @@
 """
 MediSphere AI — Core Hospital Models
 """
-from typing import List, Optional, Any
-from datetime import datetime, date
-from beanie import Indexed
-from pydantic import Field
+from datetime import date
+
 from app.models.base import BaseDocument
+from beanie import Indexed
 
 
 class Department(BaseDocument):
     name: Indexed(str, unique=True)
     code: Indexed(str, unique=True)
-    head_doctor_id: Optional[str] = None
+    head_doctor_id: str | None = None
     capacity: int = 0
     current_occupancy: int = 0
     
@@ -37,11 +36,11 @@ class Patient(BaseDocument):
     date_of_birth: date
     gender: str
     contact_number: str
-    email: Optional[str] = None
+    email: str | None = None
     address: str
     blood_group: str
-    medical_history: List[str] = []
-    allergies: List[str] = []
+    medical_history: list[str] = []
+    allergies: list[str] = []
     emergency_contact: dict = {}
     
     class Settings:

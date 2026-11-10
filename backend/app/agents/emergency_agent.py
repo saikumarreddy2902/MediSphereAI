@@ -4,10 +4,9 @@ MediSphere AI — Emergency Response Agent
 Monitors emergency queue, prioritizes critical triage levels (1 & 2),
 and coordinates department responses using MongoDB Atlas ODM (Beanie).
 """
-from typing import List, Dict, Any
-from app.agents.base_agent import BaseAgent, AgentOutput
-from app.models.operations import EmergencyCase
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import generate_emergency_cases
+from app.models.operations import EmergencyCase
 
 
 class EmergencyResponseAgent(BaseAgent):

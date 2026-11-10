@@ -4,11 +4,13 @@ MediSphere AI — Qdrant Vector Store Manager
 Handles semantic embeddings generation via sentence-transformers and upsert/search transactions with Qdrant Vector DB.
 """
 import uuid
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
-from qdrant_client.http.exceptions import ResponseHandlingException as ResponseHandlingError
+
 from app.core.config import settings
+
 
 class VectorStore:
     """
@@ -67,7 +69,7 @@ class VectorStore:
             print(f"WARNING: Failed to create Qdrant collection '{collection_name}': {e}. Disabling vector store.")
             self.is_active = False
 
-    def upsert_document(self, collection_name: str, text: str, payload: Dict[str, Any]):
+    def upsert_document(self, collection_name: str, text: str, payload: dict[str, Any]):
         """Embed text and insert it into Qdrant index."""
         if not self.is_active or not self.client or not self.encoder:
             return
@@ -90,7 +92,7 @@ class VectorStore:
         except Exception as e:
             print(f"WARNING: Qdrant upsert failed: {e}")
 
-    def search_documents(self, collection_name: str, query: str, limit: int = 3) -> List[Dict[str, Any]]:
+    def search_documents(self, collection_name: str, query: str, limit: int = 3) -> list[dict[str, Any]]:
         """Search Qdrant for semantic neighbors of query text."""
         if not self.is_active or not self.client or not self.encoder:
             return []

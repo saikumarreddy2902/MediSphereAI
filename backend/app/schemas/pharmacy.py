@@ -3,11 +3,11 @@ MediSphere AI — Pharmacy Schemas
 
 Request/response Pydantic models for Medicine and Inventory API endpoints.
 """
-from typing import Optional
 from datetime import date, datetime
-from pydantic import BaseModel, Field
-from app.schemas.common import BaseResponse
 
+from pydantic import BaseModel, Field
+
+from app.schemas.common import BaseResponse
 
 # ─── Medicine ────────────────────────────────────────────────────────────────
 
@@ -16,18 +16,18 @@ class MedicineCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=200, examples=["Paracetamol 500mg"])
     manufacturer: str = Field(..., examples=["Sun Pharma"])
     category: str = Field(..., examples=["Analgesic"])
-    description: Optional[str] = None
+    description: str | None = None
     unit_price: float = Field(..., gt=0, examples=[12.50])
     requires_prescription: bool = True
 
 
 class MedicineUpdate(BaseModel):
     """Schema for updating medicine master data."""
-    manufacturer: Optional[str] = None
-    category: Optional[str] = None
-    description: Optional[str] = None
-    unit_price: Optional[float] = Field(None, gt=0)
-    requires_prescription: Optional[bool] = None
+    manufacturer: str | None = None
+    category: str | None = None
+    description: str | None = None
+    unit_price: float | None = Field(None, gt=0)
+    requires_prescription: bool | None = None
 
 
 class MedicineResponse(BaseResponse):
@@ -35,10 +35,10 @@ class MedicineResponse(BaseResponse):
     name: str
     manufacturer: str
     category: str
-    description: Optional[str] = None
+    description: str | None = None
     unit_price: float
     requires_prescription: bool
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
 
 
 # ─── Medicine Inventory ───────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ class InventoryResponse(BaseResponse):
     quantity: int
     expiry_date: date
     supplier: str
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
 
 
 class InventoryAlertResponse(BaseModel):
@@ -68,5 +68,5 @@ class InventoryAlertResponse(BaseModel):
     medicine_name: str
     current_quantity: int
     threshold: int
-    days_until_expiry: Optional[int] = None
+    days_until_expiry: int | None = None
     alert_type: str  # LOW_STOCK | NEAR_EXPIRY

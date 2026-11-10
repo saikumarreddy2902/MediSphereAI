@@ -1,8 +1,8 @@
 """
 MediSphere AI — Appointments API Tests
 """
-import pytest
 from fastapi.testclient import TestClient
+
 
 def test_get_appointments_endpoint(client: TestClient):
     """Test getting appointments list."""

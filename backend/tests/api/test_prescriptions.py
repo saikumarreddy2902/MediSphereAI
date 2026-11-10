@@ -1,8 +1,8 @@
 """
 MediSphere AI — Prescriptions API Tests
 """
-import pytest
 from fastapi.testclient import TestClient
+
 
 def test_prescriptions_list_endpoint(client: TestClient):
     """Test getting prescriptions list with filtering."""

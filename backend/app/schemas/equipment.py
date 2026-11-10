@@ -3,9 +3,10 @@ MediSphere AI — Equipment Schemas
 
 Request/response Pydantic models for the Equipment Management API endpoints.
 """
-from typing import Optional
 from datetime import date, datetime
+
 from pydantic import BaseModel, Field
+
 from app.schemas.common import BaseResponse
 
 
@@ -25,12 +26,12 @@ class EquipmentCreate(BaseModel):
 
 class EquipmentUpdate(BaseModel):
     """Schema for updating equipment status or maintenance schedule."""
-    next_maintenance_date: Optional[date] = None
-    operational_status: Optional[str] = Field(
+    next_maintenance_date: date | None = None
+    operational_status: str | None = Field(
         None,
         pattern="^(OPERATIONAL|MAINTENANCE|OUT_OF_ORDER)$"
     )
-    warranty_expiry: Optional[date] = None
+    warranty_expiry: date | None = None
 
 
 class EquipmentResponse(BaseResponse):
@@ -42,4 +43,4 @@ class EquipmentResponse(BaseResponse):
     warranty_expiry: date
     next_maintenance_date: date
     operational_status: str
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None

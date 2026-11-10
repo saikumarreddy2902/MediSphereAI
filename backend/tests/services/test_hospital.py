@@ -1,10 +1,10 @@
 """
 MediSphere AI — Services Tests
 """
+
 import pytest
 from app.services.hospital import PatientService
-from app.models.hospital import Patient
-from datetime import date
+
 
 @pytest.mark.asyncio
 async def test_patient_service_registration(db_client):

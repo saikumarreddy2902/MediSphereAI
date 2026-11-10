@@ -3,8 +3,7 @@ MediSphere AI — Staff Schemas
 
 Request/response Pydantic models for Staff Allocation and Rostering API endpoints.
 """
-from typing import List, Optional
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class StaffCreate(BaseModel):
@@ -17,21 +16,21 @@ class StaffCreate(BaseModel):
         examples=["NURSE"]
     )
     department_id: str = Field(..., description="Department MongoDB ObjectId")
-    license_number: Optional[str] = Field(None, examples=["MCI-2020-12345"])
+    license_number: str | None = Field(None, examples=["MCI-2020-12345"])
     shift: str = Field(
         default="DAY",
         pattern="^(DAY|EVENING|NIGHT|ROTATING)$"
     )
-    specialization: Optional[str] = None
+    specialization: str | None = None
     contact_number: str = Field(..., min_length=10, max_length=15)
 
 
 class StaffUpdate(BaseModel):
     """Schema for updating a staff member's assignment or status."""
-    department_id: Optional[str] = None
-    shift: Optional[str] = Field(None, pattern="^(DAY|EVENING|NIGHT|ROTATING)$")
-    specialization: Optional[str] = None
-    availability_status: Optional[str] = Field(
+    department_id: str | None = None
+    shift: str | None = Field(None, pattern="^(DAY|EVENING|NIGHT|ROTATING)$")
+    specialization: str | None = None
+    availability_status: str | None = Field(
         None,
         pattern="^(AVAILABLE|ON_LEAVE|IN_SURGERY|OFF_DUTY)$"
     )
@@ -44,9 +43,9 @@ class StaffResponse(BaseModel):
     email: str
     role: str
     department_id: str
-    license_number: Optional[str] = None
+    license_number: str | None = None
     shift: str
-    specialization: Optional[str] = None
+    specialization: str | None = None
     contact_number: str
     availability_status: str = "AVAILABLE"
 
@@ -59,4 +58,4 @@ class StaffRosterSummary(BaseModel):
     on_duty: int
     on_leave: int
     by_role: dict  # e.g. {"NURSE": 32, "PHYSICIAN": 18, ...}
-    nurse_to_patient_ratio: Optional[float] = None
+    nurse_to_patient_ratio: float | None = None

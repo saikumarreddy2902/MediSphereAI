@@ -5,11 +5,13 @@ Module: Security & Authentication Services
 Description: Provides Argon2id password hashing and verification complying with OWASP standards,
              as well as JWT access token generation and validation for RBAC control flow.
 """
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
-from passlib.context import CryptContext
-from jose import jwt, JWTError
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 from fastapi import HTTPException, status
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
 from app.core.config import settings
 
 # Argon2id password context configured following OWASP guidelines for secure password hashing.
@@ -56,9 +58,9 @@ def create_access_token(subject: str | int, role: str, department_id: str | None
     Returns:
         str: Encoded JWT bearer token string.
     """
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    to_encode: Dict[str, Any] = {
+    to_encode: dict[str, Any] = {
         "exp": expire,
         "sub": str(subject),
         "role": role,
@@ -72,7 +74,7 @@ def create_access_token(subject: str | int, role: str, department_id: str | None
 
 
 
-def decode_token(token: str) -> Dict[str, Any]:
+def decode_token(token: str) -> dict[str, Any]:
     """
     Decode and validate the signature and expiration of an incoming JWT Token.
 

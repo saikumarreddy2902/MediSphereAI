@@ -2,8 +2,11 @@
 MediSphere AI — Logging Configuration
 """
 import sys
+
 from loguru import logger
+
 from app.core.config import settings
+
 
 def setup_logging():
     """Configure structured JSON logging for production."""

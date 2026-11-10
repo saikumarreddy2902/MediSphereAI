@@ -7,8 +7,9 @@ marking as read/dismissed, and broadcast notifications from agents.
 Bridges the gap between the API layer and MongoDB Beanie model to allow
 agents and system processes to send notifications without direct model access.
 """
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
+
 from app.models.notification import Notification
 
 
@@ -20,12 +21,12 @@ class NotificationsService:
         user_id: str,
         limit: int = 30,
         unread_only: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Return paginated notifications for a specific user.
         Includes both user-targeted and broadcast (user_id=None) notifications.
         """
-        query: Dict[str, Any] = {
+        query: dict[str, Any] = {
             "$or": [
                 {"user_id": user_id},
                 {"user_id": None},
@@ -59,14 +60,14 @@ class NotificationsService:
         notification = await Notification.get(notification_id)
         if notification and not notification.is_read:
             notification.is_read = True
-            notification.read_at = datetime.now(timezone.utc)
+            notification.read_at = datetime.now(UTC)
             await notification.save()
             return True
         return False
 
     async def mark_all_read(self, user_id: str) -> int:
         """Mark all unread notifications for a user as read. Returns count updated."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         unread = await Notification.find({
             "$or": [{"user_id": user_id}, {"user_id": None}],
             "is_read": False,
@@ -83,11 +84,11 @@ class NotificationsService:
         source: str,
         title: str,
         message: str,
-        user_id: Optional[str] = None,
-        roles: Optional[List[str]] = None,
-        resource_type: Optional[str] = None,
-        resource_id: Optional[str] = None,
-        source_agent: Optional[str] = None,
+        user_id: str | None = None,
+        roles: list[str] | None = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+        source_agent: str | None = None,
     ) -> Notification:
         """Create and persist a new notification."""
         notification = Notification(
@@ -112,7 +113,7 @@ class NotificationsService:
             "is_dismissed": False,
         }).count()
 
-    def _serialize(self, n: Notification) -> Dict[str, Any]:
+    def _serialize(self, n: Notification) -> dict[str, Any]:
         """Convert a Notification document to a serializable dict."""
         return {
             "id": str(n.id),

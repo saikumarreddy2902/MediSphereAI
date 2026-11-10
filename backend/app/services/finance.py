@@ -1,11 +1,10 @@
 """
 MediSphere AI — Finance Services (Billing & Insurance)
 """
-from typing import List
-from fastapi import HTTPException, status
-from app.services.base import BaseService
-from app.repositories.core import BillRepository, InsuranceClaimRepository
+
 from app.models.finance import Bill, InsuranceClaim
+from app.repositories.core import BillRepository, InsuranceClaimRepository
+from app.services.base import BaseService
 
 
 class BillingService(BaseService[Bill]):
@@ -24,7 +23,7 @@ class BillingService(BaseService[Bill]):
             "pending_amount": total - collected
         }
 
-    async def get_pending_bills(self) -> List[Bill]:
+    async def get_pending_bills(self) -> list[Bill]:
         return await self.repository.get_pending_bills()
 
 
@@ -32,5 +31,5 @@ class InsuranceService(BaseService[InsuranceClaim]):
     def __init__(self):
         super().__init__(InsuranceClaimRepository())
 
-    async def get_pending_claims(self) -> List[InsuranceClaim]:
+    async def get_pending_claims(self) -> list[InsuranceClaim]:
         return await self.repository.get_multi(query={"claim_status": {"$in": ["SUBMITTED", "IN_REVIEW"]}})

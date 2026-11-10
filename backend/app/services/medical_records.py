@@ -5,10 +5,10 @@ Business logic layer for patient medical record management.
 Wraps repository operations with validation, access control helpers,
 and audit utilities for the Medical Records API.
 """
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
-from app.models.medical_record import MedicalRecord
+from typing import Any
+
 from app.models.audit import AuditLog
+from app.models.medical_record import MedicalRecord
 
 
 class MedicalRecordsService:
@@ -22,18 +22,18 @@ class MedicalRecordsService:
     async def list_by_patient(
         self,
         patient_id: str,
-        record_type: Optional[str] = None,
+        record_type: str | None = None,
         active_only: bool = True,
-    ) -> List[MedicalRecord]:
+    ) -> list[MedicalRecord]:
         """Return all medical records for a patient with optional filters."""
-        query: Dict[str, Any] = {"patient_id": patient_id}
+        query: dict[str, Any] = {"patient_id": patient_id}
         if record_type:
             query["record_type"] = record_type
         if active_only:
             query["is_active"] = True
         return await MedicalRecord.find(query).sort("-date_of_record").to_list()
 
-    async def get_by_id(self, record_id: str) -> Optional[MedicalRecord]:
+    async def get_by_id(self, record_id: str) -> MedicalRecord | None:
         """Fetch a single record by ObjectId string."""
         return await MedicalRecord.get(record_id)
 
@@ -41,7 +41,7 @@ class MedicalRecordsService:
         self,
         patient_id: str,
         doctor_id: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> MedicalRecord:
         """Create and persist a new medical record with audit trail."""
         record = MedicalRecord(
@@ -93,13 +93,13 @@ class MedicalRecordsService:
 
         return True
 
-    async def get_record_summary(self, patient_id: str) -> Dict[str, Any]:
+    async def get_record_summary(self, patient_id: str) -> dict[str, Any]:
         """Return a summary count of record types for a patient."""
         all_records = await MedicalRecord.find(
             {"patient_id": patient_id, "is_active": True}
         ).to_list()
 
-        type_counts: Dict[str, int] = {}
+        type_counts: dict[str, int] = {}
         for r in all_records:
             type_counts[r.record_type] = type_counts.get(r.record_type, 0) + 1
 

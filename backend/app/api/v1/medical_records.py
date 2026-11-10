@@ -5,14 +5,14 @@ Provides CRUD endpoints for structured patient medical records.
 Access is governed by RBAC: doctors and admins can create/update;
 nurses and admins can read; patients cannot access via this API directly.
 """
-from typing import List, Optional
-from datetime import datetime, date, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel
-from app.api.deps import get_current_user, RoleChecker, enforce_department_scope
-from app.models.user import User
-from app.models.medical_record import MedicalRecord
+from datetime import date, datetime
+
+from app.api.deps import RoleChecker, enforce_department_scope
 from app.models.audit import AuditLog
+from app.models.medical_record import MedicalRecord
+from app.models.user import User
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -22,28 +22,28 @@ class MedicalRecordCreate(BaseModel):
     record_type: str
     title: str
     description: str
-    icd_code: Optional[str] = None
-    severity: Optional[str] = None
+    icd_code: str | None = None
+    severity: str | None = None
     date_of_record: date
-    department_id: Optional[str] = None
-    appointment_id: Optional[str] = None
-    lab_order_id: Optional[str] = None
-    attachments: List[str] = []
+    department_id: str | None = None
+    appointment_id: str | None = None
+    lab_order_id: str | None = None
+    attachments: list[str] = []
 
 
 class MedicalRecordResponse(BaseModel):
-    id: Optional[str] = None
+    id: str | None = None
     patient_id: str
-    doctor_id: Optional[str]
-    department_id: Optional[str] = None
+    doctor_id: str | None
+    department_id: str | None = None
     record_type: str
     title: str
     description: str
-    icd_code: Optional[str]
-    severity: Optional[str]
+    icd_code: str | None
+    severity: str | None
     date_of_record: date
     is_active: bool
-    created_at: Optional[datetime]
+    created_at: datetime | None
 
 
     class Config:
@@ -54,17 +54,17 @@ class MedicalRecordResponse(BaseModel):
 
 @router.get(
     "/",
-    response_model=List[MedicalRecordResponse],
+    response_model=list[MedicalRecordResponse],
     summary="List all medical records across patients",
 )
 async def list_all_records(
-    record_type: Optional[str] = Query(None, description="Filter by record type"),
-    patient_id: Optional[str] = Query(None, description="Filter by patient ID"),
-    department_id: Optional[str] = Query(None, description="Filter by department (enforces Department RBAC)"),
+    record_type: str | None = Query(None, description="Filter by record type"),
+    patient_id: str | None = Query(None, description="Filter by patient ID"),
+    department_id: str | None = Query(None, description="Filter by department (enforces Department RBAC)"),
     limit: int = Query(50, ge=1, le=200),
     active_only: bool = Query(True),
     current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "head_nurse", "staff"])),
-) -> List[MedicalRecordResponse]:
+) -> list[MedicalRecordResponse]:
     """List medical records and clinical reports across patients with Department RBAC scoping."""
     # Enforce department scoping for clinical staff
     scoped_dept = enforce_department_scope(current_user, department_id)
@@ -101,16 +101,16 @@ async def list_all_records(
 
 @router.get(
     "/patients/{patient_id}/records",
-    response_model=List[MedicalRecordResponse],
+    response_model=list[MedicalRecordResponse],
     summary="List all medical records for a patient",
 )
 async def list_patient_records(
     patient_id: str,
-    record_type: Optional[str] = Query(None, description="Filter by record type"),
-    department_id: Optional[str] = Query(None, description="Filter by department (enforces Department RBAC)"),
+    record_type: str | None = Query(None, description="Filter by record type"),
+    department_id: str | None = Query(None, description="Filter by department (enforces Department RBAC)"),
     active_only: bool = Query(True),
     current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "head_nurse", "staff"])),
-) -> List[MedicalRecordResponse]:
+) -> list[MedicalRecordResponse]:
     """Return all medical records for a patient, scoped to user's assigned department if restricted."""
     scoped_dept = enforce_department_scope(current_user, department_id)
 

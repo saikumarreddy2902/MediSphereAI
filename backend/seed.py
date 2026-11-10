@@ -5,45 +5,40 @@ Connects to MongoDB Atlas and populates collections with realistic seed data.
 """
 import asyncio
 import random
-import uuid
-from datetime import datetime, timedelta, date, timezone
-from faker import Faker
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from beanie import init_beanie
+from datetime import UTC, date, datetime, timedelta
 
 from app.core.config import settings
 from app.core.security import get_password_hash
 
-# Import document models
-from app.models.user import User, Role, Permission
-from app.models.hospital import Patient, Doctor, Department
-from app.models.operations import Appointment, Bed, EmergencyCase
-from app.models.resources import Medicine, MedicineInventory, Equipment
-from app.models.finance import Bill, InsuranceClaim
-from app.models.laboratory import LabOrder
-from app.models.medical_record import MedicalRecord
-from app.models.prescription import Prescription
-from app.models.notification import Notification
-from app.models.audit import AuditLog
-
 # Import mock data helpers
 from app.mock.data_generator import (
     DEPARTMENTS,
-    DOCTOR_SPECIALIZATIONS,
-    MEDICINES,
     EQUIPMENT_LIST,
-    LAB_TESTS,
     INSURANCE_PROVIDERS,
-    generate_patients,
-    generate_beds,
-    generate_emergency_cases,
-    generate_staff,
-    generate_bills,
-    generate_insurance_claims,
     generate_appointments,
+    generate_beds,
+    generate_bills,
+    generate_emergency_cases,
     generate_lab_orders,
-    get_pharmacy_inventory
+    generate_patients,
+    generate_staff,
+    get_pharmacy_inventory,
 )
+from app.models.audit import AuditLog
+from app.models.finance import Bill, InsuranceClaim
+from app.models.hospital import Department, Doctor, Patient
+from app.models.laboratory import LabOrder
+from app.models.medical_record import MedicalRecord
+from app.models.notification import Notification
+from app.models.operations import Appointment, Bed, EmergencyCase
+from app.models.prescription import Prescription
+from app.models.resources import Equipment, Medicine, MedicineInventory
+
+# Import document models
+from app.models.user import Permission, Role, User
+from beanie import init_beanie
+from faker import Faker
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 fake = Faker()
 rng = random.Random(42)
@@ -439,8 +434,8 @@ async def seed_database():
             status=p_status,
             is_renewable=True,
             renewal_count=1 if p_status == "RENEWED" else 0,
-            issued_at=datetime.now(timezone.utc) - timedelta(days=rng.randint(1, 10)),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            issued_at=datetime.now(UTC) - timedelta(days=rng.randint(1, 10)),
+            expires_at=datetime.now(UTC) + timedelta(days=30),
             notes="Follow dosage strictly. Drink plenty of water."
         )
         await db_rx.insert()
@@ -459,7 +454,7 @@ async def seed_database():
             message=notif["message"],
             notification_type=notif["type"],
             is_read=rng.choice([True, False]),
-            created_at=datetime.now(timezone.utc) - timedelta(minutes=rng.randint(5, 300))
+            created_at=datetime.now(UTC) - timedelta(minutes=rng.randint(5, 300))
         )
         await db_notif.insert()
 

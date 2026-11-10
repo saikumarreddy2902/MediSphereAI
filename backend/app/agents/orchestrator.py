@@ -4,28 +4,28 @@ Coordinates all 14 specialized AI agents.
 """
 import asyncio
 from collections import deque
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
-from app.agents.base_agent import BaseAgent, AgentOutput
-from app.agents.executive_agent import ExecutiveDecisionAgent
-from app.agents.patient_flow_agent import PatientFlowAgent
 from app.agents.appointment_agent import AppointmentOptimizationAgent
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.agents.bed_intelligence_agent import BedIntelligenceAgent
-from app.agents.emergency_agent import EmergencyResponseAgent
-from app.agents.staff_allocation_agent import StaffAllocationAgent
-from app.agents.laboratory_agent import LaboratoryIntelligenceAgent
-from app.agents.pharmacy_agent import PharmacyIntelligenceAgent
-from app.agents.equipment_agent import MedicalEquipmentAgent
 from app.agents.billing_agent import BillingIntelligenceAgent
+from app.agents.emergency_agent import EmergencyResponseAgent
+from app.agents.equipment_agent import MedicalEquipmentAgent
+from app.agents.executive_agent import ExecutiveDecisionAgent
 from app.agents.insurance_agent import InsuranceAgent
-from app.agents.revenue_agent import RevenueOptimizationAgent
+from app.agents.laboratory_agent import LaboratoryIntelligenceAgent
+from app.agents.patient_flow_agent import PatientFlowAgent
+from app.agents.pharmacy_agent import PharmacyIntelligenceAgent
 from app.agents.predictive_analytics_agent import PredictiveAnalyticsAgent
-from app.agents.root_cause_agent import RootCauseAnalysisAgent
 from app.agents.recommendation_agent import RecommendationAgent
+from app.agents.revenue_agent import RevenueOptimizationAgent
+from app.agents.root_cause_agent import RootCauseAnalysisAgent
+from app.agents.staff_allocation_agent import StaffAllocationAgent
 
 
-def _dump_output(out: Any) -> Optional[Dict[str, Any]]:
+def _dump_output(out: Any) -> dict[str, Any] | None:
     """Safely convert AgentOutput to a dictionary."""
     if out is None:
         return None
@@ -62,7 +62,7 @@ class AgentOrchestrator:
     """
 
     def __init__(self):
-        self.agents: Dict[str, BaseAgent] = {
+        self.agents: dict[str, BaseAgent] = {
             "executive":      ExecutiveDecisionAgent(),
             "patient_flow":   PatientFlowAgent(),
             "appointment":    AppointmentOptimizationAgent(),
@@ -81,7 +81,7 @@ class AgentOrchestrator:
         }
 
         # Tiered scheduling: interval in seconds per agent
-        self._schedules: Dict[str, int] = {
+        self._schedules: dict[str, int] = {
             "emergency":      30,     # Critical ops — every 30 seconds
             "beds":           30,
             "patient_flow":   60,
@@ -99,7 +99,7 @@ class AgentOrchestrator:
             "executive":      600,
         }
         self.is_running = False
-        self.run_tasks: List[asyncio.Task] = []
+        self.run_tasks: list[asyncio.Task] = []
         # Bounded deque: keeps only the last 1000 agent output records to prevent
         # unbounded memory growth in long-running production deployments.
         self.all_outputs: deque = deque(maxlen=1000)
@@ -131,7 +131,7 @@ class AgentOrchestrator:
                 await asyncio.sleep(0.5)
                 output = await agent.run()
                 self._apply_output(output)
-            except Exception as e:
+            except Exception:
                 pass
 
     async def _agent_loop(self, name: str, agent: BaseAgent, interval: int) -> None:
@@ -179,7 +179,7 @@ class AgentOrchestrator:
             await asyncio.gather(*self.run_tasks, return_exceptions=True)
         self.run_tasks.clear()
 
-    async def trigger_agent(self, agent_key: str) -> Optional[AgentOutput]:
+    async def trigger_agent(self, agent_key: str) -> AgentOutput | None:
         """Manually trigger a specific agent."""
         agent = self.agents.get(agent_key)
         if not agent:
@@ -189,11 +189,11 @@ class AgentOrchestrator:
             self._apply_output(output)
         return output
 
-    def get_all_status(self) -> List[Dict]:
+    def get_all_status(self) -> list[dict]:
         """Get status of all agents."""
         return [agent.get_status() for agent in self.agents.values()]
 
-    def get_all_recommendations(self) -> List[Dict]:
+    def get_all_recommendations(self) -> list[dict]:
         """Aggregate recommendations from all agents with safe priority sorting."""
         all_recs = []
         for output in self.all_outputs:
@@ -204,7 +204,7 @@ class AgentOrchestrator:
         all_recs.sort(key=lambda x: priority_order.get(str(x.get("priority", "low")).lower(), 5))
         return all_recs
 
-    def get_all_alerts(self) -> List[Dict]:
+    def get_all_alerts(self) -> list[dict]:
         """Aggregate alerts from all agents."""
         all_alerts = []
         for output in self.all_outputs:
@@ -212,7 +212,7 @@ class AgentOrchestrator:
                 all_alerts.extend(output.alerts)
         return all_alerts
 
-    def get_latest_insights(self) -> Dict[str, Any]:
+    def get_latest_insights(self) -> dict[str, Any]:
         """Aggregate latest insights per agent."""
         insights = {}
         for key, agent in self.agents.items():
@@ -220,18 +220,18 @@ class AgentOrchestrator:
                 insights[key] = agent.last_output.insights
         return insights
 
-    async def run_pipeline_workflow(self, state: Optional[Dict] = None) -> Dict:
+    async def run_pipeline_workflow(self, state: dict | None = None) -> dict:
         """
         Execute a choreographed multi-agent workflow DAG.
         Triage Emergency -> Allocate Beds -> Optimize Staff -> Synthesize Recommendations -> Executive Approval.
         Supports LangGraph StateGraph when available, with resilient native async DAG fallback.
         """
-        workflow_state = state or {"timestamp": datetime.now(timezone.utc).isoformat(), "stages": {}}
+        workflow_state = state or {"timestamp": datetime.now(UTC).isoformat(), "stages": {}}
         if "stages" not in workflow_state:
             workflow_state["stages"] = {}
 
         try:
-            from langgraph.graph import StateGraph, END
+            from langgraph.graph import END, StateGraph
             # pyrefly: ignore[bad-specialization]
             builder = StateGraph(dict)
             

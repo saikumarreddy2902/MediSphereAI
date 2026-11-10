@@ -5,14 +5,14 @@ Module: Intensive & Telemetry Ward Vitals Observation
 Description: Exposes endpoints for real-time patient telemetry, historical vitals observation,
              critical threshold violation alerts, and vital signs updates.
 """
-from typing import Optional, List, Dict, Any
-from datetime import datetime, timezone
 import random
-from fastapi import APIRouter, Depends, Query, HTTPException, status
-from pydantic import BaseModel, Field
+from datetime import UTC, datetime
+from typing import Any
 
 from app.api.deps import get_current_user
 from app.models.user import User
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 
@@ -35,7 +35,7 @@ class PatientVitalsCreate(BaseModel):
     spo2: int
     temperature: float
     respiratory_rate: int
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 # ─── Ward Monitored Patients Telemetry State ──────────────────────────────────
@@ -148,7 +148,7 @@ def _generate_telemetry(p: dict) -> dict:
         alerts.append(f"Temp {temp}°C")
 
     return {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "heart_rate": hr,
         "systolic": sys,
         "diastolic": dia,
@@ -163,10 +163,10 @@ def _generate_telemetry(p: dict) -> dict:
 
 @router.get("", summary="Get Real-Time Monitored Ward Patients Telemetry")
 async def get_all_vitals(
-    ward: Optional[str] = Query(None, description="Filter by ward name (ICU, Cardiac Care, etc.)"),
-    condition: Optional[str] = Query(None, description="CRITICAL | MONITORED | STABLE"),
+    ward: str | None = Query(None, description="Filter by ward name (ICU, Cardiac Care, etc.)"),
+    condition: str | None = Query(None, description="CRITICAL | MONITORED | STABLE"),
     current_user: User = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Returns live telemetry readings for all monitored hospital beds.
     """
@@ -192,7 +192,7 @@ async def get_all_vitals(
 
     return {
         "count": len(telemetry_list),
-        "refreshed_at": datetime.now(timezone.utc).isoformat(),
+        "refreshed_at": datetime.now(UTC).isoformat(),
         "data": telemetry_list,
     }
 
@@ -202,7 +202,7 @@ async def get_patient_vitals_history(
     patient_id: str,
     points: int = Query(15, ge=5, le=60, description="Number of history observation points"),
     current_user: User = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Returns historical vitals trends and threshold violations for the specified patient.
     """
@@ -247,7 +247,7 @@ async def record_patient_vitals(
     patient_id: str,
     vitals: PatientVitalsCreate,
     current_user: User = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Submits a nurse vital sign check into the patient's electronic health record.
     """
@@ -279,7 +279,7 @@ async def record_patient_vitals(
         "status": "recorded",
         "patient_id": patient_id,
         "recorded_by": getattr(current_user, "username", "staff"),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "alerts_triggered": alerts,
         "critical_alert": len(alerts) > 0,
     }
@@ -288,7 +288,7 @@ async def record_patient_vitals(
 @router.get("/alerts/active", summary="List All Active Critical Vitals Alarms")
 async def get_active_vitals_alarms(
     current_user: User = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Returns high-priority vitals alarms across all intensive care and ward units.
     """

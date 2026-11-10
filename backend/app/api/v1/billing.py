@@ -1,12 +1,12 @@
 """
 MediSphere AI — Billing API
 """
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from app.services.finance import BillingService
-from app.schemas.billing import BillCreate, BillResponse, BillingStats
+
 from app.api.deps import RoleChecker
 from app.models.user import User
+from app.schemas.billing import BillCreate, BillingStats, BillResponse
+from app.services.finance import BillingService
+from fastapi import APIRouter, Depends, Query, status
 
 router = APIRouter()
 
@@ -21,7 +21,7 @@ async def get_billing_stats(
     """Get overall billing and revenue statistics — admin/staff only"""
     return await service.get_revenue_summary()
 
-@router.get("/pending", response_model=List[BillResponse])
+@router.get("/pending", response_model=list[BillResponse])
 async def get_pending_bills(
     service: BillingService = Depends(get_billing_service),
     current_user: User = Depends(RoleChecker(["admin", "staff"])),
@@ -29,10 +29,10 @@ async def get_pending_bills(
     """Get all pending or partially paid bills — admin/staff only"""
     return await service.get_pending_bills()
 
-@router.get("/", response_model=List[BillResponse])
+@router.get("/", response_model=list[BillResponse])
 async def list_bills(
-    patient_id: Optional[str] = None,
-    payment_status: Optional[str] = None,
+    patient_id: str | None = None,
+    payment_status: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     service: BillingService = Depends(get_billing_service),
