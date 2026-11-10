@@ -15,3 +15,13 @@ elif [ -f "../requirements.txt" ]; then
     pip install -r ../requirements.txt
 fi
 
+if [ -f "setup.py" ]; then
+    echo "Installing package via setup.py"
+    pip install -e .
+elif [ -f "backend/setup.py" ]; then
+    echo "Installing package via backend/setup.py"
+    pip install -e ./backend
+elif [ -f "../setup.py" ]; then
+    echo "Installing package via ../setup.py"
+    pip install -e ..
+fi
