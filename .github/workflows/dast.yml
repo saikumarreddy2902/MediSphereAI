@@ -55,7 +55,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt uvicorn httpx
 
-      - name: Start MediSphere API Server
+      - name: Start MediSphere API Server & Run OWASP ZAP DAST Scanner
         env:
           MONGODB_URI: "mongodb://localhost:27017"
           DATABASE_NAME: "medisphere_dast_db"
@@ -65,30 +65,45 @@ jobs:
           ALLOWED_ORIGINS: '["http://localhost:3000"]'
         run: |
           cd backend
-          python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          export PYTHONPATH=.
+          RUNNER_TRACKING_ID="" nohup python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/uvicorn.log 2>&1 &
+          cd ..
+
+          echo "Waiting for MediSphere API Server to become ready..."
+          SERVER_UP=false
           for i in $(seq 1 30); do
-            if curl -s -f http://127.0.0.1:8000/health > /dev/null; then
-              echo "✅ MediSphere API Server ready on port 8000"
+            if curl -s -f http://127.0.0.1:8000/health > /dev/null 2>&1; then
+              echo "✅ MediSphere API Server is ready on port 8000 (attempt $i)"
+              SERVER_UP=true
               break
             fi
-            echo "Waiting for API server initialization ($i/30)..."
             sleep 2
           done
 
-      - name: Verify API Live Readiness & Fetch OpenAPI Definition
-        run: |
-          curl -f http://127.0.0.1:8000/health || exit 1
+          if [ "$SERVER_UP" != "true" ]; then
+            echo "❌ Uvicorn failed to start within 60s! Server logs:"
+            cat /tmp/uvicorn.log
+            exit 1
+          fi
+
+          echo "Extracting OpenAPI specification schema..."
           curl -f http://127.0.0.1:8000/api/v1/openapi.json -o ./openapi.json || exit 1
           echo "OpenAPI schema successfully extracted."
 
-      - name: Run OWASP ZAP API Security Scanner
-        run: |
-          docker run --network="host" -v $(pwd):/zap/wrk/:rw -t zaproxy/zap-stable zap-api-scan.py \
+          echo "Preparing workspace permissions for OWASP ZAP..."
+          chmod -R 777 "$(pwd)"
+          touch zap_report.html report_json.json
+          chmod 666 zap_report.html report_json.json
+
+          echo "Running OWASP ZAP Dynamic API Security Scanner..."
+          docker run --network="host" -v "$(pwd):/zap/wrk/:rw" -t ghcr.io/zaproxy/zaproxy:stable zap-api-scan.py \
             -t http://127.0.0.1:8000/api/v1/openapi.json \
             -f openapi \
             -a \
             -r zap_report.html \
             -J report_json.json || true
+
+          echo "OWASP ZAP Dynamic Security Scan completed."
 
       - name: Upload OWASP ZAP DAST Security Report
         if: always()
