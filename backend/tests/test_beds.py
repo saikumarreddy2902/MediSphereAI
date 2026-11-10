@@ -8,11 +8,11 @@ Tests:
   - Occupied bed count does not exceed total bed count
 """
 import pytest
-from httpx import AsyncClient, ASGITransport
-from app.main import app
 from app.core.security import get_password_hash
-from app.models.user import User
+from app.main import app
 from app.models.operations import Bed
+from app.models.user import User
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest.fixture

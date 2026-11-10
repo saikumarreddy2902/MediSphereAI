@@ -12,8 +12,8 @@ Usage:
 """
 import json
 import time
-from typing import Any, Optional, Dict, Tuple
 from datetime import timedelta
+from typing import Any
 
 try:
     import redis.asyncio as aioredis
@@ -21,8 +21,9 @@ try:
 except ImportError:
     REDIS_AVAILABLE = False
 
-from app.core.config import settings
 from loguru import logger
+
+from app.core.config import settings
 
 
 class RedisCache:
@@ -33,7 +34,7 @@ class RedisCache:
 
     def __init__(self) -> None:
         self._client: Any = None
-        self._in_memory: Dict[str, Tuple[float, Any]] = {}
+        self._in_memory: dict[str, tuple[float, Any]] = {}
 
     async def connect(self) -> None:
         """Initialize the async Redis connection pool or fallback to in-memory cache."""
@@ -49,7 +50,7 @@ class RedisCache:
             )
             await self._client.ping()
             logger.info(f"Redis cache connected: {settings.REDIS_URL}")
-        except Exception as e:
+        except Exception:
             logger.info("Redis server offline — seamless In-Memory TTL Cache activated.")
             self._client = None
 
@@ -59,7 +60,7 @@ class RedisCache:
             await self._client.aclose()
         self._in_memory.clear()
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Return cached value for key, or None on miss/expiry."""
         if not self._client:
             entry = self._in_memory.get(key)

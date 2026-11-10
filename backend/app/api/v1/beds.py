@@ -1,11 +1,14 @@
 """
 MediSphere AI — Beds API
 """
-from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, Query, status
-from app.services.hospital import BedService
+import random
+from datetime import UTC, datetime
+
 from app.api.deps import RoleChecker
 from app.models.user import User
+from app.services.hospital import BedService
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -24,8 +27,8 @@ async def get_bed_summary(
 
 @router.get("/")
 async def get_all_beds(
-    ward: Optional[str] = Query(None, description="Filter beds by ward name"),
-    available: Optional[bool] = Query(None, description="Filter beds by availability"),
+    ward: str | None = Query(None, description="Filter beds by ward name"),
+    available: bool | None = Query(None, description="Filter beds by availability"),
     service: BedService = Depends(get_bed_service),
     current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "staff"])),
 ):
@@ -39,23 +42,22 @@ async def get_all_beds(
     return [b.model_dump(by_alias=True, mode="json") for b in beds]
 
 
-from pydantic import BaseModel, Field
-import random
-from datetime import datetime, timezone
+
+
 
 class AgentBedAllocationRequest(BaseModel):
-    patient_id: Optional[str] = None
-    patient_name: Optional[str] = None
-    acuity_level: Optional[str] = "HIGH"  # CRITICAL, HIGH, MODERATE, LOW
-    preferred_ward: Optional[str] = None
-    needs_ventilator: Optional[bool] = False
-    needs_oxygen: Optional[bool] = True
-    needs_isolation: Optional[bool] = False
+    patient_id: str | None = None
+    patient_name: str | None = None
+    acuity_level: str | None = "HIGH"  # CRITICAL, HIGH, MODERATE, LOW
+    preferred_ward: str | None = None
+    needs_ventilator: bool | None = False
+    needs_oxygen: bool | None = True
+    needs_isolation: bool | None = False
 
 
 @router.post("/agent-auto-allocate")
 async def agent_auto_allocate_bed(
-    req: Optional[AgentBedAllocationRequest] = None,
+    req: AgentBedAllocationRequest | None = None,
     service: BedService = Depends(get_bed_service),
     current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse"])),
 ):
@@ -134,7 +136,7 @@ async def agent_auto_allocate_bed(
         "ai_confidence_score": 0.988,
         "ai_rationale": ai_rationale,
         "equipment_configured": equipment_list,
-        "allocated_at": datetime.now(timezone.utc).isoformat(),
+        "allocated_at": datetime.now(UTC).isoformat(),
     }
 
 

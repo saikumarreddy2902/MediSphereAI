@@ -1,10 +1,10 @@
 """
 MediSphere AI — Laboratory Models
 """
-from typing import Optional
 from datetime import datetime
-from pymongo import IndexModel, ASCENDING
+
 from app.models.base import BaseDocument
+from pymongo import ASCENDING, IndexModel
 
 
 class LabOrder(BaseDocument):

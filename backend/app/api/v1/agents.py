@@ -1,11 +1,16 @@
 """Agents API"""
 import random
 from datetime import datetime
-from fastapi import APIRouter, Request, HTTPException
+
 from app.mock.data_generator import (
-    get_agents_status, rand_int, rand_float,
-    AGENT_DEFINITIONS, fake, rand_choice, _hours_ago
+    AGENT_DEFINITIONS,
+    _hours_ago,
+    fake,
+    get_agents_status,
+    rand_choice,
+    rand_int,
 )
+from fastapi import APIRouter, HTTPException, Request
 
 router = APIRouter()
 
@@ -139,7 +144,7 @@ async def trigger_agent(request: Request, agent_key: str):
             }
         except Exception as e:
             return {
-                "message": f"Agent '{agent_key}' triggered (queued): {str(e)}",
+                "message": f"Agent '{agent_key}' triggered (queued): {e!s}",
                 "agent_key": agent_key,
                 "status": "queued",
                 "started_at": datetime.now().isoformat(),

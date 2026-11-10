@@ -4,8 +4,8 @@ MediSphere AI — Notification Model
 Persistent notification document replacing the previous mock-only implementation.
 Supports agent-driven alerts, system notifications, and user-targeted messages.
 """
-from typing import Optional, List
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from app.models.base import BaseDocument
 
 
@@ -19,32 +19,32 @@ class Notification(BaseDocument):
         MANUAL      — created by a staff member for a patient or colleague
     """
     # Targeting
-    user_id: Optional[str] = None           # None = broadcast to all users
-    roles: List[str] = []                   # empty = all roles
+    user_id: str | None = None           # None = broadcast to all users
+    roles: list[str] = []                   # empty = all roles
 
     # Content
     notification_type: str = "info"         # info | warning | alert | critical
     source: str = "SYSTEM"                  # AGENT | SYSTEM | MANUAL
-    source_agent: Optional[str] = None      # agent name if source = AGENT
+    source_agent: str | None = None      # agent name if source = AGENT
     title: str
     message: str
 
     # Linked resource (deep link)
-    resource_type: Optional[str] = None     # "patient" | "bed" | "laborder" | etc.
-    resource_id: Optional[str] = None
+    resource_type: str | None = None     # "patient" | "bed" | "laborder" | etc.
+    resource_id: str | None = None
 
     # State
     is_read: bool = False
     is_dismissed: bool = False
-    read_at: Optional[datetime] = None
+    read_at: datetime | None = None
 
     # Timestamps
     created_at: datetime = None             # type: ignore[assignment]
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
 
     def __init__(self, **data):
         if "created_at" not in data or data["created_at"] is None:
-            data["created_at"] = datetime.now(timezone.utc)
+            data["created_at"] = datetime.now(UTC)
         super().__init__(**data)
 
     class Settings:

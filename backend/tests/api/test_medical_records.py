@@ -1,8 +1,8 @@
 """
 MediSphere AI — Medical Records API Tests
 """
-import pytest
 from fastapi.testclient import TestClient
+
 
 def test_patient_medical_records_endpoint(client: TestClient):
     """Test getting medical records for a patient."""

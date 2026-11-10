@@ -1,27 +1,27 @@
 """
 MediSphere AI — Pharmacy API
 """
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from app.services.resources import PharmacyService
-from app.schemas.pharmacy import (
-    MedicineCreate,
-    MedicineResponse,
-    InventoryCreate,
-    InventoryResponse,
-    InventoryAlertResponse
-)
+
 from app.api.deps import RoleChecker
 from app.models.user import User
+from app.schemas.pharmacy import (
+    InventoryAlertResponse,
+    InventoryCreate,
+    InventoryResponse,
+    MedicineCreate,
+    MedicineResponse,
+)
+from app.services.resources import PharmacyService
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 router = APIRouter()
 
 def get_pharmacy_service() -> PharmacyService:
     return PharmacyService()
 
-@router.get("/inventory", response_model=List[InventoryResponse])
+@router.get("/inventory", response_model=list[InventoryResponse])
 async def get_inventory(
-    medicine_id: Optional[str] = None,
+    medicine_id: str | None = None,
     service: PharmacyService = Depends(get_pharmacy_service),
     current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "staff"])),
 ):
@@ -40,7 +40,7 @@ async def add_inventory_batch(
     """Add a new inventory batch to stock — admin/staff only"""
     return await service.add_inventory_batch(batch_in)
 
-@router.get("/alerts", response_model=List[InventoryAlertResponse])
+@router.get("/alerts", response_model=list[InventoryAlertResponse])
 async def get_stock_alerts(
     service: PharmacyService = Depends(get_pharmacy_service),
     current_user: User = Depends(RoleChecker(["admin", "doctor", "nurse", "staff"])),
@@ -48,9 +48,9 @@ async def get_stock_alerts(
     """Get low stock and near-expiry alerts — clinical staff only"""
     return await service.get_inventory_alerts()
 
-@router.get("/", response_model=List[MedicineResponse])
+@router.get("/", response_model=list[MedicineResponse])
 async def list_medicines(
-    category: Optional[str] = None,
+    category: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     service: PharmacyService = Depends(get_pharmacy_service),

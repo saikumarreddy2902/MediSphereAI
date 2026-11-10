@@ -1,9 +1,9 @@
 """
 MediSphere AI — Abstract Base Repository
 """
-from typing import TypeVar, Generic, List, Optional, Any, Dict
+from typing import Any, Generic, TypeVar
+
 from beanie import Document
-from beanie.operators import In
 from pydantic import BaseModel
 
 # T is the Beanie Document type
@@ -26,15 +26,15 @@ class BaseRepository(Generic[T]):
             doc = self.model(**obj_in.model_dump())
         return await doc.insert()
 
-    async def get(self, id: str) -> Optional[T]:
+    async def get(self, id: str) -> T | None:
         """Get a document by ID."""
         return await self.model.get(id)
 
-    async def get_by_field(self, field: str, value: Any) -> Optional[T]:
+    async def get_by_field(self, field: str, value: Any) -> T | None:
         """Get a single document by a specific field."""
         return await self.model.find_one({field: value})
 
-    async def get_multi(self, skip: int = 0, limit: int = 100, query: Optional[dict] = None) -> List[T]:
+    async def get_multi(self, skip: int = 0, limit: int = 100, query: dict | None = None) -> list[T]:
         """Get multiple documents with pagination and optional query filter."""
         find_query = self.model.find(query or {})
         return await find_query.skip(skip).limit(limit).to_list()
@@ -56,13 +56,13 @@ class BaseRepository(Generic[T]):
         doc = await self.get(id)
         if doc:
             if hasattr(doc, "status"):
-                setattr(doc, "status", "DELETED")
+                doc.status = "DELETED"
                 await doc.save()
             else:
                 await doc.delete()
             return True
         return False
 
-    async def count(self, query: Optional[dict] = None) -> int:
+    async def count(self, query: dict | None = None) -> int:
         """Count documents matching a query."""
         return await self.model.find(query or {}).count()

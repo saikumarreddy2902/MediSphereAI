@@ -3,8 +3,8 @@ MediSphere AI — Bed Schemas
 
 Request/response Pydantic models for the Bed Intelligence API endpoints.
 """
-from typing import Dict, Optional
 from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -18,10 +18,10 @@ class BedCreate(BaseModel):
 
 class BedUpdate(BaseModel):
     """Schema for updating bed metadata."""
-    ward: Optional[str] = None
-    department_id: Optional[str] = None
-    type: Optional[str] = None
-    last_maintenance_date: Optional[datetime] = None
+    ward: str | None = None
+    department_id: str | None = None
+    type: str | None = None
+    last_maintenance_date: datetime | None = None
 
 
 class BedAssignRequest(BaseModel):
@@ -37,9 +37,9 @@ class BedResponse(BaseModel):
     department_id: str
     type: str
     is_occupied: bool
-    current_patient_id: Optional[str] = None
-    last_maintenance_date: Optional[datetime] = None
-    created_at: Optional[datetime] = None
+    current_patient_id: str | None = None
+    last_maintenance_date: datetime | None = None
+    created_at: datetime | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -58,9 +58,9 @@ class BedDashboardSummary(BaseModel):
     Includes total counts and per-ward breakdown.
     """
     total: WardStats
-    icu: Optional[WardStats] = None
-    emergency: Optional[WardStats] = None
-    general: Optional[WardStats] = None
-    private: Optional[WardStats] = None
-    pediatric: Optional[WardStats] = None
-    maternity: Optional[WardStats] = None
+    icu: WardStats | None = None
+    emergency: WardStats | None = None
+    general: WardStats | None = None
+    private: WardStats | None = None
+    pediatric: WardStats | None = None
+    maternity: WardStats | None = None

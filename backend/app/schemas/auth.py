@@ -3,7 +3,7 @@ MediSphere AI — Authentication Schemas
 
 Request and response models for login, token issuance, and user profile endpoints.
 """
-from typing import List, Optional
+
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -18,7 +18,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user_id: str
-    roles: List[str]
+    roles: list[str]
 
 
 class UserCreateRequest(BaseModel):
@@ -27,8 +27,8 @@ class UserCreateRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
     full_name: str = Field(..., min_length=2)
-    roles: List[str] = ["staff"]
-    department_id: Optional[str] = None
+    roles: list[str] = ["staff"]
+    department_id: str | None = None
 
 
 class UserProfileResponse(BaseModel):
@@ -37,8 +37,8 @@ class UserProfileResponse(BaseModel):
     username: str
     email: str
     full_name: str
-    roles: List[str]
-    department_id: Optional[str]
+    roles: list[str]
+    department_id: str | None
     is_active: bool
 
     model_config = {"populate_by_name": True}

@@ -1,18 +1,17 @@
 """
 MediSphere AI — Pharmacy and Equipment Models
 """
-from typing import Optional, List
 from datetime import date
-from beanie import Indexed
-from pydantic import Field
+
 from app.models.base import BaseDocument
+from beanie import Indexed
 
 
 class Medicine(BaseDocument):
     name: Indexed(str, unique=True)
     manufacturer: str
     category: str
-    description: Optional[str] = None
+    description: str | None = None
     unit_price: float
     requires_prescription: bool = True
     

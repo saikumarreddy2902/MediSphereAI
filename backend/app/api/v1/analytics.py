@@ -1,16 +1,23 @@
 """Analytics API"""
-from fastapi import APIRouter
+from datetime import UTC
+
 from app.mock.data_generator import (
-    get_hourly_patient_flow, get_daily_revenue, get_department_performance,
-    get_predictive_data, get_hospital_kpis, rand_int, rand_float
+    get_daily_revenue,
+    get_department_performance,
+    get_hospital_kpis,
+    get_hourly_patient_flow,
+    get_predictive_data,
+    rand_float,
 )
+from fastapi import APIRouter
 
 router = APIRouter()
 
 @router.get("/kpis/history")
 async def get_kpi_history(metric: str = "bed_occupancy_rate", days: int = 30):
-    from app.mock.data_generator import _now, rand_float
     from datetime import timedelta
+
+    from app.mock.data_generator import _now
     data = []
     base = _now()
     for d in range(days, 0, -1):
@@ -74,8 +81,8 @@ async def get_prescription_analytics():
     Aggregated prescription metrics for the analytics dashboard.
     Returns status breakdown, top medications, and dispensing speed.
     """
+
     from app.models.prescription import Prescription
-    from datetime import datetime, timezone, timedelta
 
     all_prescriptions = await Prescription.find_all().to_list()
 
@@ -128,12 +135,13 @@ async def export_report(
     """
     Generates and returns structured analytical report exports for hospital administrators.
     """
-    from datetime import datetime, timezone
     import csv
     import io
+    from datetime import datetime
+
     from fastapi.responses import StreamingResponse
 
-    timestamp_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    timestamp_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
 
     # Sample compiled dataset according to report_type
     report_datasets = {

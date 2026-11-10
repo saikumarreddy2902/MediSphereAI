@@ -6,9 +6,9 @@ Description: Provides structured metric collectors and OpenTelemetry hooks for t
              API request latencies, active agent loop executions, and database query timings.
 """
 import time
-from typing import Callable
+from collections.abc import Callable
+
 from fastapi import Request, Response
-from loguru import logger
 
 
 class MetricsCollector:

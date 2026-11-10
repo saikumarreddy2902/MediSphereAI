@@ -6,9 +6,8 @@ Description: Tests FastAPI health endpoints, authentication JWT issuance, patien
              bed allocation logic, and AI agent orchestrator execution cycles.
 """
 import pytest
-from httpx import AsyncClient, ASGITransport
 from app.main import app
-from app.core.telemetry import metrics_collector
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest.mark.asyncio

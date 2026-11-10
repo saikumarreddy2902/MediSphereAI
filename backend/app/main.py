@@ -5,39 +5,58 @@ Module: Application Initialization & Orchestration
 Description: Configures the core FastAPI application instance, CORS policy, exception handlers,
              middleware stack, database connection lifecycles, and API router registrations.
 """
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Dict, Any
+from typing import Any
+
+import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
-import uvicorn
-
-from app.core.config import settings
-from app.database.connection import connect_to_mongo, close_mongo_connection
-from app.core.logging import setup_logging
-from app.core.cache import cache
-from app.middleware.logging_middleware import RequestLoggingMiddleware
-from app.middleware.security_headers import SecurityHeadersMiddleware
-from app.middleware.rate_limit import limiter
-from app.core.exceptions import global_exception_handler
-from app.core.telemetry import metrics_collector, metrics_middleware
 from slowapi import _rate_limit_exceeded_handler  # type: ignore[import-untyped]
 from slowapi.errors import RateLimitExceeded  # type: ignore[import-untyped]
-from app.api.v1 import (
-    auth, patients, appointments, beds, emergency,
-    staff, pharmacy, laboratory, equipment,
-    billing, insurance, analytics, recommendations,
-    notifications, agents, dashboard, health, websocket,
-    medical_records, prescriptions, work_queues, audit, vitals
-)
 
 from app.agents.orchestrator import AgentOrchestrator
+from app.api.v1 import (
+    agents,
+    analytics,
+    appointments,
+    audit,
+    auth,
+    beds,
+    billing,
+    dashboard,
+    emergency,
+    equipment,
+    health,
+    insurance,
+    laboratory,
+    medical_records,
+    notifications,
+    patients,
+    pharmacy,
+    prescriptions,
+    recommendations,
+    staff,
+    vitals,
+    websocket,
+    work_queues,
+)
+from app.core.cache import cache
+from app.core.config import settings
+from app.core.exceptions import global_exception_handler
+from app.core.logging import setup_logging
+from app.core.telemetry import metrics_collector, metrics_middleware
+from app.database.connection import close_mongo_connection, connect_to_mongo
+from app.middleware.logging_middleware import RequestLoggingMiddleware
+from app.middleware.rate_limit import limiter
+from app.middleware.security_headers import SecurityHeadersMiddleware
 
 # ─── Lifespan Lifecycle Management ──────────────────────────────────────────
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """
     Asynchronous context manager handling startup and shutdown events for the application.
 
@@ -144,8 +163,16 @@ app.include_router(vitals.router,          prefix=f"{API_PREFIX}/vitals",       
 
 # ─── System Health & Root Endpoints ─────────────────────────────────────────
 
+@app.get(f"{API_PREFIX}/openapi.json", include_in_schema=False)
+def get_v1_openapi() -> dict[str, Any]:
+    """
+    Expose OpenAPI specification under /api/v1/openapi.json for automated DAST scanners.
+    """
+    return app.openapi()
+
+
 @app.get("/health", tags=["Health"])
-async def health_check() -> Dict[str, Any]:
+async def health_check() -> dict[str, Any]:
     """
     Lightweight health-check endpoint for load balancers and orchestrators.
     """
@@ -158,7 +185,7 @@ async def health_check() -> Dict[str, Any]:
 
 
 @app.get("/metrics", tags=["Ops"])
-async def get_metrics() -> Dict[str, Any]:
+async def get_metrics() -> dict[str, Any]:
     """
     Prometheus telemetry endpoint returning system latency, request rates, and agent cycles.
     """
@@ -167,7 +194,7 @@ async def get_metrics() -> Dict[str, Any]:
 
 
 @app.get("/", tags=["Root"])
-async def root() -> Dict[str, str]:
+async def root() -> dict[str, str]:
     """
     Root endpoint serving welcome information and interactive documentation link.
     """
@@ -193,5 +220,7 @@ async def server_error_handler(request: Request, exc: Exception) -> JSONResponse
 
 
 if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)  # nosec B104
 

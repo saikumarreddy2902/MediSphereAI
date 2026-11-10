@@ -1,15 +1,15 @@
 """Recommendations API"""
-from fastapi import APIRouter, Query
-from typing import Optional
+
 from app.mock.data_generator import get_recommendations
+from fastapi import APIRouter
 
 router = APIRouter()
 
 @router.get("/")
 async def list_recommendations(
-    priority: Optional[str] = None,
-    category: Optional[str] = None,
-    acknowledged: Optional[bool] = None,
+    priority: str | None = None,
+    category: str | None = None,
+    acknowledged: bool | None = None,
 ):
     recs = get_recommendations()
     if priority:

@@ -1,10 +1,12 @@
 """
 MediSphere AI — Vitals Telemetry API Integration Tests
 """
-from fastapi.testclient import TestClient
 from unittest.mock import MagicMock
-from app.main import app
+
 from app.api.deps import get_current_user
+from app.main import app
+from fastapi.testclient import TestClient
+
 
 def _mock_nurse_user():
     user = MagicMock()

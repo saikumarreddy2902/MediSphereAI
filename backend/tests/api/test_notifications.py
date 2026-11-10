@@ -1,8 +1,8 @@
 """
 MediSphere AI — Notifications API Tests
 """
-import pytest
 from fastapi.testclient import TestClient
+
 
 def test_get_notifications_endpoint(client: TestClient):
     """Test getting notification list."""

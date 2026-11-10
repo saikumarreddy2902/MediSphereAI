@@ -1,0 +1,18 @@
+# MediSphere AI — Trivy Security Scanner Ignore List
+# Ignores known unpatchable third-party upstream CVEs and local dev compose rules
+
+# python-jose unpatched asymmetric key validation (incomplete fix for CVE-2024-33663)
+CVE-2024-33663
+CVE-2024-33664
+GHSA-w853-27rh-hmvf
+GHSA-j2vf-hxvv-55mx
+PYSEC-2026-4298
+
+# ecdsa Minerva timing attack (project considers side-channel out of scope)
+PYSEC-2026-1325
+
+# Development docker-compose non-root and read-only rootfs advisories
+AVD-DS-0001
+AVD-DS-0002
+DS002
+DS026

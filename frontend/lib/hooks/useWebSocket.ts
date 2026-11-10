@@ -17,6 +17,7 @@ export function useWebSocket(url?: string) {
   const [lastMessage, setLastMessage] = useState<WSMessage | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const connectRef = useRef<() => void>(() => {});
 
   const connect = useCallback(() => {
     try {
@@ -42,7 +43,7 @@ export function useWebSocket(url?: string) {
         setIsConnected(false);
         console.log('WebSocket connection closed. Attempting reconnect in 5s...');
         reconnectTimeoutRef.current = setTimeout(() => {
-          connect();
+          connectRef.current();
         }, 5000);
       };
 
@@ -56,6 +57,10 @@ export function useWebSocket(url?: string) {
       console.warn('WebSocket connection failed:', e);
     }
   }, [wsUrl]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     connect();

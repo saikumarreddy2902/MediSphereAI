@@ -4,8 +4,9 @@ Generates consistent, seeded hospital simulation data for all modules.
 """
 import random
 import uuid
-from datetime import datetime, timedelta, date
-from typing import List, Dict, Any
+from datetime import date, datetime, timedelta
+from typing import Any
+
 from faker import Faker
 
 fake = Faker()
@@ -143,7 +144,7 @@ def rand_choice(lst):
 
 # ─── KPI Data ─────────────────────────────────────────────────────────────────
 
-def get_hospital_kpis() -> Dict[str, Any]:
+def get_hospital_kpis() -> dict[str, Any]:
     return {
         "average_waiting_time": rand_float(18, 42, 1),          # minutes
         "patient_throughput": rand_int(280, 420),                # per day
@@ -176,7 +177,7 @@ def get_hospital_kpis() -> Dict[str, Any]:
 
 # ─── Patients ─────────────────────────────────────────────────────────────────
 
-def generate_patients(count: int = 50) -> List[Dict]:
+def generate_patients(count: int = 50) -> list[dict]:
     patients = []
     statuses = ["registered", "waiting", "in_consultation", "in_lab", "in_pharmacy", "in_billing", "discharged", "admitted"]
     status_weights = [5, 20, 20, 15, 15, 10, 10, 5]
@@ -212,7 +213,7 @@ def generate_patients(count: int = 50) -> List[Dict]:
 
 # ─── Beds ─────────────────────────────────────────────────────────────────────
 
-def generate_beds() -> List[Dict]:
+def generate_beds() -> list[dict]:
     beds = []
     bed_types = [
         ("ICU",       20,  "icu",       "#8b5cf6"),
@@ -225,7 +226,6 @@ def generate_beds() -> List[Dict]:
     for ward_name, count, btype, color in bed_types:
         occupied = int(count * rand_float(0.60, 0.95))
         for i in range(count):
-            bid = len(beds) + 1
             is_occupied = i < occupied
             beds.append({
                 "id": str(uuid.uuid4()),
@@ -243,7 +243,7 @@ def generate_beds() -> List[Dict]:
             })
     return beds
 
-def get_bed_summary() -> Dict:
+def get_bed_summary() -> dict:
     totals = {"icu": 20, "emergency": 40, "general": 120, "private": 50, "pediatric": 25, "maternity": 20}
     result = {}
     for k, v in totals.items():
@@ -261,7 +261,7 @@ def get_bed_summary() -> Dict:
 
 # ─── Emergency ────────────────────────────────────────────────────────────────
 
-def generate_emergency_cases(count: int = 20) -> List[Dict]:
+def generate_emergency_cases(count: int = 20) -> list[dict]:
     cases = []
     triage_labels = {1: "Resuscitation", 2: "Emergent", 3: "Urgent", 4: "Semi-Urgent", 5: "Non-Urgent"}
     triage_colors = {1: "#ef4444", 2: "#f97316", 3: "#f59e0b", 4: "#22c55e", 5: "#6b7280"}
@@ -304,7 +304,7 @@ def generate_emergency_cases(count: int = 20) -> List[Dict]:
 
 # ─── Staff ────────────────────────────────────────────────────────────────────
 
-def generate_staff(count: int = 60) -> List[Dict]:
+def generate_staff(count: int = 60) -> list[dict]:
     roles = ["doctor", "nurse", "technician", "pharmacist", "lab_technician", "admin"]
     role_weights = [20, 40, 15, 10, 10, 5]
     shifts = ["morning", "afternoon", "night", "on_call"]
@@ -336,7 +336,7 @@ def generate_staff(count: int = 60) -> List[Dict]:
 
 # ─── Pharmacy ─────────────────────────────────────────────────────────────────
 
-def get_pharmacy_inventory() -> List[Dict]:
+def get_pharmacy_inventory() -> list[dict]:
     inventory = []
     for med in MEDICINES:
         stock = med["stock"] + rand_int(-50, 50)
@@ -364,7 +364,7 @@ def get_pharmacy_inventory() -> List[Dict]:
 
 # ─── Laboratory ───────────────────────────────────────────────────────────────
 
-def generate_lab_orders(count: int = 60) -> List[Dict]:
+def generate_lab_orders(count: int = 60) -> list[dict]:
     orders = []
     statuses = ["ordered", "sample_collected", "in_progress", "completed", "critical_reported"]
     status_weights = [20, 20, 25, 30, 5]
@@ -397,7 +397,7 @@ def generate_lab_orders(count: int = 60) -> List[Dict]:
 
 # ─── Billing ──────────────────────────────────────────────────────────────────
 
-def generate_bills(count: int = 60) -> List[Dict]:
+def generate_bills(count: int = 60) -> list[dict]:
     bills = []
     statuses = ["pending", "partially_paid", "paid", "overdue", "disputed", "insurance_pending"]
     status_weights = [30, 20, 25, 10, 5, 10]
@@ -433,7 +433,7 @@ def generate_bills(count: int = 60) -> List[Dict]:
 
 # ─── Insurance Claims ─────────────────────────────────────────────────────────
 
-def generate_insurance_claims(count: int = 40) -> List[Dict]:
+def generate_insurance_claims(count: int = 40) -> list[dict]:
     claims = []
     statuses = ["submitted", "under_review", "approved", "rejected", "pending_documents"]
     status_weights = [25, 30, 25, 10, 10]
@@ -464,7 +464,7 @@ def generate_insurance_claims(count: int = 40) -> List[Dict]:
 
 # ─── Appointments ─────────────────────────────────────────────────────────────
 
-def generate_appointments(count: int = 80) -> List[Dict]:
+def generate_appointments(count: int = 80) -> list[dict]:
     appts = []
     statuses = ["scheduled", "confirmed", "in_progress", "completed", "cancelled", "no_show"]
     status_weights = [20, 25, 15, 25, 10, 5]
@@ -497,7 +497,7 @@ def generate_appointments(count: int = 80) -> List[Dict]:
 
 # ─── Analytics / Time-Series ──────────────────────────────────────────────────
 
-def get_hourly_patient_flow(hours: int = 24) -> List[Dict]:
+def get_hourly_patient_flow(hours: int = 24) -> list[dict]:
     data = []
     base_now = _now()
     for h in range(hours, 0, -1):
@@ -520,7 +520,7 @@ def get_hourly_patient_flow(hours: int = 24) -> List[Dict]:
         })
     return data
 
-def get_daily_revenue(days: int = 30) -> List[Dict]:
+def get_daily_revenue(days: int = 30) -> list[dict]:
     data = []
     base = _now()
     for d in range(days, 0, -1):
@@ -539,7 +539,7 @@ def get_daily_revenue(days: int = 30) -> List[Dict]:
         })
     return data
 
-def get_department_performance() -> List[Dict]:
+def get_department_performance() -> list[dict]:
     perfs = []
     for dept in DEPARTMENTS[:10]:
         perfs.append({
@@ -553,7 +553,7 @@ def get_department_performance() -> List[Dict]:
         })
     return perfs
 
-def get_predictive_data() -> Dict:
+def get_predictive_data() -> dict:
     """7-day predictions for key metrics."""
     days = []
     base = _now()
@@ -658,7 +658,7 @@ RECOMMENDATION_TEMPLATES = [
     },
 ]
 
-def get_recommendations() -> List[Dict]:
+def get_recommendations() -> list[dict]:
     recs = []
     for i, tmpl in enumerate(RECOMMENDATION_TEMPLATES):
         recs.append({
@@ -690,7 +690,7 @@ AGENT_DEFINITIONS = [
     {"name": "Recommendation Agent",          "key": "recommendation", "icon": "💡", "category": "Intelligence"},
 ]
 
-def get_agents_status() -> List[Dict]:
+def get_agents_status() -> list[dict]:
     statuses = ["running", "idle", "error"]
     status_weights = [50, 45, 5]
     result = []

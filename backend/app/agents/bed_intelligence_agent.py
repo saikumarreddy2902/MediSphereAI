@@ -4,10 +4,11 @@ MediSphere AI — Bed Intelligence Agent
 Monitors bed occupancy across all wards using MongoDB Atlas ODM (Beanie)
 and generates real-time transfer and discharge recommendations.
 """
-from typing import Dict, Any
-from app.agents.base_agent import BaseAgent, AgentOutput
-from app.models.operations import Bed
+from typing import Any
+
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import get_bed_summary
+from app.models.operations import Bed
 
 
 class BedIntelligenceAgent(BaseAgent):
@@ -19,7 +20,7 @@ class BedIntelligenceAgent(BaseAgent):
     async def analyze(self) -> AgentOutput:
         recommendations = []
         alerts = []
-        summary: Dict[str, Any] = {}
+        summary: dict[str, Any] = {}
 
         try:
             # Query MongoDB via Beanie ODM

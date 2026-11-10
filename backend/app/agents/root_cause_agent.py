@@ -1,5 +1,6 @@
 """Root Cause Analysis Agent — generates explainable causal chains for operational issues."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
+
 
 class RootCauseAnalysisAgent(BaseAgent):
     agent_name = "Root Cause Analysis Agent"

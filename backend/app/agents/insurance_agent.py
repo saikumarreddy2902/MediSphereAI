@@ -1,6 +1,7 @@
 """Insurance Agent — verifies claims and predicts approval outcomes."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import generate_insurance_claims
+
 
 class InsuranceAgent(BaseAgent):
     agent_name = "Insurance Agent"

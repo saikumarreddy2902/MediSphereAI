@@ -1,6 +1,7 @@
 """Staff Allocation Agent — balances workload and predicts staffing shortages."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import generate_staff
+
 
 class StaffAllocationAgent(BaseAgent):
     agent_name = "Staff Allocation Agent"

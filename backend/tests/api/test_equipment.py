@@ -1,7 +1,6 @@
 """
 MediSphere AI — Equipment API Tests
 """
-import pytest
 from fastapi.testclient import TestClient
 
 

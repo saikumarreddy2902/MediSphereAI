@@ -2,9 +2,9 @@
 MediSphere AI — Finance Service Unit Tests
 """
 import pytest
-from motor.motor_asyncio import AsyncIOMotorClient
-from app.services.finance import BillingService, InsuranceService
 from app.models.finance import Bill, InsuranceClaim
+from app.services.finance import BillingService, InsuranceService
+from motor.motor_asyncio import AsyncIOMotorClient
 
 
 @pytest.mark.asyncio

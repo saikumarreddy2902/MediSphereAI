@@ -5,50 +5,43 @@ Exports all request/response schema classes for use in API route handlers.
 Keeping schemas separate from Beanie ODM document models enforces Clean Architecture
 by decoupling the API contract from the persistence layer.
 """
-from app.schemas.auth import (
-    LoginRequest, TokenResponse, UserProfileResponse
-)
-from app.schemas.patients import (
-    PatientCreate, PatientUpdate, PatientResponse, PatientListResponse
-)
+from app.schemas.appointments import AppointmentCreate, AppointmentResponse, AppointmentUpdate
+from app.schemas.auth import LoginRequest, TokenResponse, UserProfileResponse
 from app.schemas.beds import (
-    BedCreate, BedUpdate, BedResponse, BedAssignRequest, BedDashboardSummary
+    BedAssignRequest,
+    BedCreate,
+    BedDashboardSummary,
+    BedResponse,
+    BedUpdate,
 )
-from app.schemas.emergency import (
-    EmergencyCaseCreate, EmergencyCaseUpdate, EmergencyCaseResponse
+from app.schemas.billing import BillCreate, BillingStats, BillResponse, InvoiceItemSchema
+from app.schemas.common import ErrorResponse, PaginatedResponse, SuccessResponse
+from app.schemas.emergency import EmergencyCaseCreate, EmergencyCaseResponse, EmergencyCaseUpdate
+from app.schemas.equipment import EquipmentCreate, EquipmentResponse, EquipmentUpdate
+from app.schemas.insurance import InsuranceClaimCreate, InsuranceClaimResponse, InsuranceClaimUpdate
+from app.schemas.laboratory import LabOrderCreate, LabOrderResponse, LabOrderUpdate
+from app.schemas.medical_records import (
+    MedicalRecordCreate,
+    MedicalRecordResponse,
+    MedicalRecordUpdate,
 )
-from app.schemas.appointments import (
-    AppointmentCreate, AppointmentUpdate, AppointmentResponse
-)
+from app.schemas.patients import PatientCreate, PatientListResponse, PatientResponse, PatientUpdate
 from app.schemas.pharmacy import (
-    MedicineCreate, MedicineUpdate, MedicineResponse,
-    InventoryCreate, InventoryResponse
-)
-from app.schemas.equipment import (
-    EquipmentCreate, EquipmentUpdate, EquipmentResponse
-)
-from app.schemas.billing import (
-    BillCreate, BillResponse, BillingStats, InvoiceItemSchema
-)
-from app.schemas.insurance import (
-    InsuranceClaimCreate, InsuranceClaimUpdate, InsuranceClaimResponse
-)
-from app.schemas.staff import (
-    StaffCreate, StaffUpdate, StaffResponse, StaffRosterSummary
-)
-from app.schemas.common import (
-    PaginatedResponse, SuccessResponse, ErrorResponse
-)
-from app.schemas.laboratory import (
-    LabOrderCreate, LabOrderUpdate, LabOrderResponse
+    InventoryCreate,
+    InventoryResponse,
+    MedicineCreate,
+    MedicineResponse,
+    MedicineUpdate,
 )
 from app.schemas.prescriptions import (
-    PrescriptionCreate, PrescriptionResponse, PrescribedMedicationIn,
-    DrugInteractionWarning, ValidateRequest, PrescriptionRenewRequest
+    DrugInteractionWarning,
+    PrescribedMedicationIn,
+    PrescriptionCreate,
+    PrescriptionRenewRequest,
+    PrescriptionResponse,
+    ValidateRequest,
 )
-from app.schemas.medical_records import (
-    MedicalRecordCreate, MedicalRecordUpdate, MedicalRecordResponse
-)
+from app.schemas.staff import StaffCreate, StaffResponse, StaffRosterSummary, StaffUpdate
 
 __all__ = [
     # Auth
@@ -76,4 +69,9 @@ __all__ = [
     "PaginatedResponse", "SuccessResponse", "ErrorResponse",
     # Laboratory
     "LabOrderCreate", "LabOrderUpdate", "LabOrderResponse",
+    # Medical Records
+    "MedicalRecordCreate", "MedicalRecordResponse", "MedicalRecordUpdate",
+    # Prescriptions
+    "DrugInteractionWarning", "PrescribedMedicationIn", "PrescriptionCreate",
+    "PrescriptionRenewRequest", "PrescriptionResponse", "ValidateRequest",
 ]

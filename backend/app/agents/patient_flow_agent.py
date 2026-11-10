@@ -1,6 +1,7 @@
 """Patient Flow Agent — tracks patient journey and detects bottlenecks."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import generate_patients, get_hourly_patient_flow
+
 
 class PatientFlowAgent(BaseAgent):
     agent_name = "Patient Flow Agent"

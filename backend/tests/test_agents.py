@@ -8,15 +8,14 @@ Tests:
   - Agent status returns expected fields
   - Orchestrator.trigger_agent works for named agents
 """
-import pytest
-import asyncio
-from app.agents.orchestrator import AgentOrchestrator
-from app.agents.base_agent import AgentOutput
-from app.agents.emergency_agent import EmergencyResponseAgent
-from app.agents.bed_intelligence_agent import BedIntelligenceAgent
-from app.agents.pharmacy_agent import PharmacyIntelligenceAgent
-from app.agents.billing_agent import BillingIntelligenceAgent
 
+import pytest
+from app.agents.base_agent import AgentOutput
+from app.agents.bed_intelligence_agent import BedIntelligenceAgent
+from app.agents.billing_agent import BillingIntelligenceAgent
+from app.agents.emergency_agent import EmergencyResponseAgent
+from app.agents.orchestrator import AgentOrchestrator
+from app.agents.pharmacy_agent import PharmacyIntelligenceAgent
 
 # ─── Agent Output Structure ────────────────────────────────────────────────
 

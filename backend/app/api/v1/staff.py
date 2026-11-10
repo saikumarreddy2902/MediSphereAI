@@ -1,8 +1,10 @@
 """
 MediSphere AI — Staff API
 """
+from datetime import UTC
+
+from app.services.staff import DepartmentService, StaffService
 from fastapi import APIRouter, Depends
-from app.services.staff import StaffService, DepartmentService
 
 router = APIRouter()
 
@@ -84,10 +86,10 @@ async def swap_staff_shift(payload: dict):
     """
     Processes peer-to-peer shift swap requests between nurses or resident doctors.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
     return {
         "status": "APPROVED",
-        "swap_id": f"SWP-{int(datetime.now(timezone.utc).timestamp())}",
+        "swap_id": f"SWP-{int(datetime.now(UTC).timestamp())}",
         "requester": payload.get("requester_id"),
         "target": payload.get("target_id"),
         "message": "Shift swap successfully approved and updated in central hospital roster.",

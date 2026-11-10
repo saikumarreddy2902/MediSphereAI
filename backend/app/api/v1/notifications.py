@@ -4,13 +4,13 @@ MediSphere AI — Notifications API (Real persistent implementation)
 Replaces the previous mock data generator with real MongoDB-backed notifications.
 Supports querying, marking as read/dismissed, and internal creation from agents.
 """
-from typing import List, Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
+from app.api.deps import RoleChecker, get_current_user
+from app.models.notification import Notification
+from app.models.user import User
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel
-from app.api.deps import get_current_user, RoleChecker
-from app.models.user import User
-from app.models.notification import Notification
 
 router = APIRouter()
 
@@ -20,26 +20,26 @@ router = APIRouter()
 class NotificationCreate(BaseModel):
     notification_type: str = "info"
     source: str = "SYSTEM"
-    source_agent: Optional[str] = None
+    source_agent: str | None = None
     title: str
     message: str
-    user_id: Optional[str] = None
-    roles: List[str] = []
-    resource_type: Optional[str] = None
-    resource_id: Optional[str] = None
+    user_id: str | None = None
+    roles: list[str] = []
+    resource_type: str | None = None
+    resource_id: str | None = None
 
 
 class NotificationResponse(BaseModel):
-    id: Optional[str] = None
+    id: str | None = None
     notification_type: str
     source: str
-    source_agent: Optional[str]
+    source_agent: str | None
     title: str
     message: str
     is_read: bool
-    created_at: Optional[datetime]
-    resource_type: Optional[str]
-    resource_id: Optional[str]
+    created_at: datetime | None
+    resource_type: str | None
+    resource_id: str | None
 
     class Config:
         from_attributes = True
@@ -93,7 +93,7 @@ async def mark_as_read(
     notification = await Notification.get(notification_id)
     if notification and not notification.is_read:
         notification.is_read = True
-        notification.read_at = datetime.now(timezone.utc)
+        notification.read_at = datetime.now(UTC)
         await notification.save()
     return {"message": "Marked as read", "id": notification_id}
 
@@ -101,7 +101,7 @@ async def mark_as_read(
 @router.post("/mark-all-read", summary="Mark all notifications as read")
 async def mark_all_read(current_user: User = Depends(get_current_user)):
     """Mark all unread notifications for the current user as read."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     unread = await Notification.find({
         "$or": [{"user_id": str(current_user.id)}, {"user_id": None}],
         "is_read": False,

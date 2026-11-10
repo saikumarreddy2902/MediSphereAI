@@ -12,10 +12,10 @@ Tests:
   - /auth/logout returns success and creates audit log
 """
 import pytest
-from httpx import AsyncClient, ASGITransport
-from app.main import app
 from app.core.security import get_password_hash
+from app.main import app
 from app.models.user import User
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest.fixture

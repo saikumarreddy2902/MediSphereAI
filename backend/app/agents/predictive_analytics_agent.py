@@ -1,6 +1,7 @@
 """Predictive Analytics Agent — forecasts future demand across all hospital metrics."""
-from app.agents.base_agent import BaseAgent, AgentOutput
-from app.mock.data_generator import get_predictive_data, rand_int
+from app.agents.base_agent import AgentOutput, BaseAgent
+from app.mock.data_generator import get_predictive_data
+
 
 class PredictiveAnalyticsAgent(BaseAgent):
     agent_name = "Predictive Analytics Agent"

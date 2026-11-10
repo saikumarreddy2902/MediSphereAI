@@ -1,18 +1,18 @@
 """
 MediSphere AI — Laboratory Services
 """
-from typing import List, Dict, Any
-from datetime import datetime, timedelta
-from app.services.base import BaseService
-from app.repositories.core import LabOrderRepository
+from typing import Any
+
 from app.models.laboratory import LabOrder
+from app.repositories.core import LabOrderRepository
+from app.services.base import BaseService
 
 
 class LaboratoryService(BaseService[LabOrder]):
     def __init__(self):
         super().__init__(LabOrderRepository())
 
-    async def get_lab_stats(self) -> Dict[str, Any]:
+    async def get_lab_stats(self) -> dict[str, Any]:
         """Calculate and return laboratory operational statistics."""
         total = await self.repository.count()
         completed = await self.repository.count({"status": "completed"})

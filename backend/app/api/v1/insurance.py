@@ -1,21 +1,21 @@
 """
 MediSphere AI — Insurance API
 """
-from typing import List, Optional
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from datetime import UTC, datetime
+
+from app.schemas.insurance import InsuranceClaimCreate, InsuranceClaimResponse, InsuranceClaimUpdate
 from app.services.finance import InsuranceService
-from app.schemas.insurance import InsuranceClaimCreate, InsuranceClaimUpdate, InsuranceClaimResponse
+from fastapi import APIRouter, Depends, status
 
 router = APIRouter()
 
 def get_insurance_service() -> InsuranceService:
     return InsuranceService()
 
-@router.get("/claims", response_model=List[InsuranceClaimResponse])
+@router.get("/claims", response_model=list[InsuranceClaimResponse])
 async def get_all_claims(
-    patient_id: Optional[str] = None,
-    claim_status: Optional[str] = None,
+    patient_id: str | None = None,
+    claim_status: str | None = None,
     service: InsuranceService = Depends(get_insurance_service)
 ):
     """Get all insurance claims"""
@@ -26,7 +26,7 @@ async def get_all_claims(
         query["claim_status"] = claim_status
     return await service.repository.get_multi(query=query)
 
-@router.get("/claims/pending", response_model=List[InsuranceClaimResponse])
+@router.get("/claims/pending", response_model=list[InsuranceClaimResponse])
 async def get_pending_claims(service: InsuranceService = Depends(get_insurance_service)):
     """Get pending insurance claims"""
     return await service.get_pending_claims()
@@ -43,7 +43,7 @@ async def submit_claim(
     claim_dict = claim_in.model_dump()
     claim_dict["claim_number"] = claim_num
     claim_dict["claim_status"] = "SUBMITTED"
-    claim_dict["submission_date"] = datetime.now(timezone.utc)
+    claim_dict["submission_date"] = datetime.now(UTC)
     
     return await service.repository.create(claim_dict)
 
@@ -57,5 +57,5 @@ async def update_claim_status(
     claim = await service.get_or_404(claim_id)
     update_data = claim_update.model_dump(exclude_unset=True)
     if "resolution_date" not in update_data and claim_update.claim_status in ["APPROVED", "REJECTED"]:
-        update_data["resolution_date"] = datetime.now(timezone.utc)
+        update_data["resolution_date"] = datetime.now(UTC)
     return await service.repository.update(claim, update_data)

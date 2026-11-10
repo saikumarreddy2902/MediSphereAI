@@ -5,19 +5,20 @@ Provides real-time departmental work queues, task routing, and operational
 cockpit data for doctors, nurses, and department heads.
 Access is protected by Department-based RBAC.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
-from datetime import datetime, date, timezone
 import random
+from datetime import UTC, date, datetime
 
-from app.models.user import User
-from app.api.deps import get_current_user, RoleChecker, enforce_department_scope
-from app.mock.data_generator import (
-    DEPARTMENTS, DOCTOR_SPECIALIZATIONS, generate_appointments,
-    generate_emergency_cases, generate_staff, generate_lab_orders
-)
+from app.api.deps import RoleChecker
 from app.api.v1.appointments import DEPARTMENT_DOCTORS, DYNAMIC_APPOINTMENTS
+from app.mock.data_generator import (
+    DEPARTMENTS,
+    generate_appointments,
+    generate_emergency_cases,
+    generate_lab_orders,
+)
+from app.models.user import User
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 
@@ -27,7 +28,7 @@ class WorkQueueActionRequest(BaseModel):
     department: str = Field(..., example="Cardiology")
     action_type: str = Field(..., example="COMPLETE_CONSULTATION", description="START_CONSULTATION, COMPLETE_CONSULTATION, DISPATCH_EMERGENCY, ACKNOWLEDGE_LAB, DISCHARGE_PREP")
     target_id: str = Field(..., example="APT-7101")
-    notes: Optional[str] = Field(None, example="Patient evaluated, stable ECG.")
+    notes: str | None = Field(None, example="Patient evaluated, stable ECG.")
 
 class WorkQueueActionResponse(BaseModel):
     success: bool
@@ -38,7 +39,7 @@ class WorkQueueActionResponse(BaseModel):
     updated_at: str
 
 # ─── In-memory Queue Overrides / Live Action State ───────────────────────────
-QUEUE_STATUS_OVERRIDES: Dict[str, str] = {}
+QUEUE_STATUS_OVERRIDES: dict[str, str] = {}
 
 
 # ─── Endpoints ───────────────────────────────────────────────────────────────
@@ -85,7 +86,7 @@ async def get_all_department_queues_summary():
 @router.get("/department/{department_name}", summary="Get live operational work queue for a specific department")
 async def get_department_work_queue(
     department_name: str,
-    priority: Optional[str] = Query(None, description="Filter by priority: critical, high, medium, all"),
+    priority: str | None = Query(None, description="Filter by priority: critical, high, medium, all"),
 ):
     """
     Returns the real-time operational work queue for a specific clinical department:
@@ -147,9 +148,9 @@ async def get_department_work_queue(
     if len(dept_appts) < 4:
         sample_patients = [
             {"name": "Ramesh Rao", "id": "P-0051", "time": "09:30 AM", "reason": f"Initial {canonical_name} evaluation"},
-            {"name": "Sangeeta Sen", "id": "P-0052", "time": "10:45 AM", "reason": f"Follow-up and specialized diagnostic review"},
+            {"name": "Sangeeta Sen", "id": "P-0052", "time": "10:45 AM", "reason": "Follow-up and specialized diagnostic review"},
             {"name": "Amitabh Bose", "id": "P-0053", "time": "11:30 AM", "reason": f"Chronic symptoms assessment in {canonical_name}"},
-            {"name": "Meenakshi Iyer", "id": "P-0054", "time": "02:15 PM", "reason": f"Pre-procedure counseling"},
+            {"name": "Meenakshi Iyer", "id": "P-0054", "time": "02:15 PM", "reason": "Pre-procedure counseling"},
         ]
         for idx, sp in enumerate(sample_patients):
             doc = doctors_registered[idx % len(doctors_registered)]
@@ -186,13 +187,7 @@ async def get_department_work_queue(
     emergencies_for_dept = []
     for ec in all_emergencies:
         status_override = QUEUE_STATUS_OVERRIDES.get(ec["case_number"], ec.get("status", "waiting"))
-        if canonical_name in ["Emergency", "ICU"]:
-            emergencies_for_dept.append({**ec, "status": status_override})
-        elif canonical_name == "Cardiology" and "chest pain" in ec.get("chief_complaint", "").lower():
-            emergencies_for_dept.append({**ec, "status": status_override})
-        elif canonical_name == "Neurology" and "stroke" in ec.get("chief_complaint", "").lower():
-            emergencies_for_dept.append({**ec, "status": status_override})
-        elif canonical_name == "Surgery" and "trauma" in ec.get("chief_complaint", "").lower():
+        if canonical_name in ["Emergency", "ICU"] or canonical_name == "Cardiology" and "chest pain" in ec.get("chief_complaint", "").lower() or canonical_name == "Neurology" and "stroke" in ec.get("chief_complaint", "").lower() or canonical_name == "Surgery" and "trauma" in ec.get("chief_complaint", "").lower():
             emergencies_for_dept.append({**ec, "status": status_override})
 
     if not emergencies_for_dept:
@@ -291,5 +286,5 @@ async def execute_queue_action(
         action_type=action,
         target_id=target_id,
         message=msg,
-        updated_at=datetime.now(timezone.utc).isoformat()
+        updated_at=datetime.now(UTC).isoformat()
     )

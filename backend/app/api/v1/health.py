@@ -1,8 +1,8 @@
 """
 MediSphere AI — Health Probes
 """
-from fastapi import APIRouter
 from app.database.connection import db
+from fastapi import APIRouter
 
 router = APIRouter()
 

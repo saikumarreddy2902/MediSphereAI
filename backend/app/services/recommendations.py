@@ -5,9 +5,8 @@ Manages AI agent-generated recommendations with persistent MongoDB storage.
 Replaces the previous mock data generator dependency with real data operations.
 Supports filtering, acknowledgement, and priority-based sorting.
 """
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
-from app.models.recommendations import Recommendation  # type: ignore[import]
+from datetime import UTC, datetime
+from typing import Any
 
 
 class RecommendationsService:
@@ -20,21 +19,19 @@ class RecommendationsService:
 
     async def list_recommendations(
         self,
-        priority: Optional[str] = None,
-        category: Optional[str] = None,
-        acknowledged: Optional[bool] = None,
+        priority: str | None = None,
+        category: str | None = None,
+        acknowledged: bool | None = None,
         limit: int = 50,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Retrieve recommendations from the orchestrator's in-memory output store.
 
         In Phase 2 this will be replaced with a full MongoDB collection query.
         For now, delegates to the orchestrator stored in app.state.
         """
-        from app.agents.orchestrator import AgentOrchestrator
         # Re-use singleton orchestrator data if available
         try:
-            from fastapi import Request
             # Fallback to mock data if orchestrator not available
             from app.mock.data_generator import get_recommendations
             recs = get_recommendations()
@@ -50,17 +47,17 @@ class RecommendationsService:
 
         return recs[:limit]
 
-    async def acknowledge(self, rec_id: str, user_id: str) -> Dict[str, Any]:
+    async def acknowledge(self, rec_id: str, user_id: str) -> dict[str, Any]:
         """Mark a recommendation as acknowledged by a staff member."""
         # Future: update MongoDB record
         return {
             "id": rec_id,
             "is_acknowledged": True,
             "acknowledged_by": user_id,
-            "acknowledged_at": datetime.now(timezone.utc).isoformat(),
+            "acknowledged_at": datetime.now(UTC).isoformat(),
         }
 
-    async def get_stats(self) -> Dict[str, Any]:
+    async def get_stats(self) -> dict[str, Any]:
         """Return aggregated recommendation statistics."""
         from app.mock.data_generator import get_recommendations
         recs = get_recommendations()

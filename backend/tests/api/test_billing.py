@@ -1,7 +1,6 @@
 """
 MediSphere AI — Billing API Tests
 """
-import pytest
 from fastapi.testclient import TestClient
 
 

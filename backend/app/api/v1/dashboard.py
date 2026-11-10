@@ -1,10 +1,14 @@
 """Dashboard API — aggregated KPIs and overview data"""
-from fastapi import APIRouter
 from app.mock.data_generator import (
-    get_hospital_kpis, get_hourly_patient_flow, get_daily_revenue,
-    get_department_performance, get_predictive_data, get_recommendations,
-    get_agents_status, generate_emergency_cases
+    get_agents_status,
+    get_daily_revenue,
+    get_department_performance,
+    get_hospital_kpis,
+    get_hourly_patient_flow,
+    get_predictive_data,
+    get_recommendations,
 )
+from fastapi import APIRouter
 
 router = APIRouter()
 

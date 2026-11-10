@@ -1,6 +1,7 @@
 """Revenue Optimization Agent — analyzes profitability and recommends improvements."""
-from app.agents.base_agent import BaseAgent, AgentOutput
+from app.agents.base_agent import AgentOutput, BaseAgent
 from app.mock.data_generator import get_daily_revenue, get_department_performance, rand_float
+
 
 class RevenueOptimizationAgent(BaseAgent):
     agent_name = "Revenue Optimization Agent"

@@ -1,10 +1,11 @@
 """
 MediSphere AI — Service Base
 """
-from typing import TypeVar, Generic, Any, List, Optional
-from pydantic import BaseModel
-from fastapi import HTTPException, status
+from typing import Generic, TypeVar
+
 from app.repositories.base import BaseRepository
+from fastapi import HTTPException, status
+from pydantic import BaseModel
 
 T = TypeVar("T")
 

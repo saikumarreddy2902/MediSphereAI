@@ -5,17 +5,17 @@ Module: Security & Compliance Audit Trail
 Description: Exposes endpoints to retrieve, filter, record, and export immutable audit trail logs.
              Supports HIPAA compliance and security operations center (SOC) event monitoring.
 """
-from typing import Optional, List, Dict, Any
-from datetime import datetime, timezone
 import csv
 import io
-from fastapi import APIRouter, Depends, Query, Request, HTTPException, status
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from datetime import UTC, datetime
+from typing import Any
 
 from app.api.deps import get_current_user
-from app.models.user import User
 from app.models.audit import AuditLog
+from app.models.user import User
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 
@@ -24,9 +24,9 @@ router = APIRouter()
 class AuditEventCreate(BaseModel):
     action: str = Field(..., description="Action verb (e.g. LOGIN, VIEW, CREATE, UPDATE, DELETE, ACCESS_DENIED)")
     resource: str = Field(..., description="Target resource type (e.g. patient, prescription, bill, bed)")
-    resource_id: Optional[str] = Field(None, description="Identifier of the resource affected")
+    resource_id: str | None = Field(None, description="Identifier of the resource affected")
     outcome: str = Field("SUCCESS", description="SUCCESS | FAILED | WARNING")
-    detail: Optional[str] = Field(None, description="Human-readable description of the operation")
+    detail: str | None = Field(None, description="Human-readable description of the operation")
 
 
 # ─── Mock Audit Seed (Used when database collection has zero entries) ─────────
@@ -160,12 +160,12 @@ MOCK_AUDIT_LOGS = [
 async def get_audit_logs(
     limit: int = Query(50, ge=1, le=200),
     skip: int = Query(0, ge=0),
-    action: Optional[str] = Query(None, description="Filter by action verb (e.g. LOGIN, CREATE)"),
-    status: Optional[str] = Query(None, description="Filter by outcome (SUCCESS, FAILED, WARNING)"),
-    resource: Optional[str] = Query(None, description="Filter by resource type"),
-    search: Optional[str] = Query(None, description="Full-text query in details/username/resource"),
+    action: str | None = Query(None, description="Filter by action verb (e.g. LOGIN, CREATE)"),
+    status: str | None = Query(None, description="Filter by outcome (SUCCESS, FAILED, WARNING)"),
+    resource: str | None = Query(None, description="Filter by resource type"),
+    search: str | None = Query(None, description="Full-text query in details/username/resource"),
     current_user: User = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Retrieves system security audit records. Accessible to authorized administrative staff.
     Falls back gracefully to seed audit records if database collection has zero entries.
@@ -185,7 +185,7 @@ async def get_audit_logs(
 
     try:
         import asyncio
-        query: Dict[str, Any] = {}
+        query: dict[str, Any] = {}
         if action and action != "ALL":
             query["action"] = action
         if status and status != "ALL":
@@ -239,8 +239,8 @@ async def get_audit_logs(
 async def record_audit_event(
     event: AuditEventCreate,
     request: Request,
-    current_user: Optional[User] = Depends(get_current_user),
-) -> Dict[str, Any]:
+    current_user: User | None = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Appends an immutable audit event to the tamper-evident log stream.
     """
@@ -264,7 +264,7 @@ async def record_audit_event(
             user_agent=user_agent,
             outcome=event.outcome.upper(),
             detail=event.detail,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         await log_entry.insert()
         return {"status": "recorded", "id": str(log_entry.id)}
@@ -275,7 +275,7 @@ async def record_audit_event(
 @router.get("/summary", summary="Get Security Audit Overview Metrics")
 async def get_audit_summary(
     current_user: User = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Returns high-level compliance metrics for the security operations dashboard.
     """
@@ -286,7 +286,7 @@ async def get_audit_summary(
         "access_denied_count": 2,
         "active_monitored_ips": 18,
         "compliance_status": "COMPLIANT_HIPAA_NABH",
-        "last_tamper_check": datetime.now(timezone.utc).isoformat(),
+        "last_tamper_check": datetime.now(UTC).isoformat(),
     }
 
 

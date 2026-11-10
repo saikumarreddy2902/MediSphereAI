@@ -5,9 +5,9 @@ Module: Core Settings Manager
 Description: Uses Pydantic BaseSettings for strongly typed, validated environment configuration.
              Injects system configurations from environment variables or .env files securely.
 """
-from pydantic_settings import BaseSettings
+
 from pydantic import field_validator
-from typing import List
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -59,12 +59,26 @@ class Settings(BaseSettings):
         return v
 
     # ─── CORS Policy Allowed Origins ──────────────────────────────────────────────
-    ALLOWED_ORIGINS: List[str] = [
+    ALLOWED_ORIGINS: list[str] = [
         "http://localhost:3000",
         "https://medisphere-ai.vercel.app",
         "https://medisphere-ai.onrender.com",
         # NOTE: Never add "*" here — it conflicts with allow_credentials=True
     ]
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v):
+        if isinstance(v, str):
+            v = v.strip()
+            if v.startswith("[") and v.endswith("]"):
+                import json
+                try:
+                    return json.loads(v)
+                except Exception:
+                    pass
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
 
     # ─── AI Agent Execution Engine Configuration ──────────────────────────────────
     AGENT_RUN_INTERVAL_SECONDS: int = 30  # Interval between agent analysis cycles

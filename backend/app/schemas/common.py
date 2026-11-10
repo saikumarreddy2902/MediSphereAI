@@ -3,7 +3,8 @@ MediSphere AI — Common / Shared Schemas
 
 Re-usable generic response wrappers used across all API endpoints.
 """
-from typing import Any, Generic, List, Optional, TypeVar
+from typing import Any, Generic, TypeVar
+
 from pydantic import BaseModel, Field, field_validator
 
 T = TypeVar("T")
@@ -15,11 +16,11 @@ class BaseResponse(BaseModel):
     Coerces MongoDB ObjectId → str for the `id` / `_id` field automatically,
     preventing ResponseValidationError when Beanie returns ObjectId instances.
     """
-    id: Optional[str] = Field(None, alias="_id")
+    id: str | None = Field(None, alias="_id")
 
     @field_validator("id", mode="before")
     @classmethod
-    def coerce_objectid(cls, v: Any) -> Optional[str]:
+    def coerce_objectid(cls, v: Any) -> str | None:
         if v is None:
             return None
         return str(v)
@@ -31,14 +32,14 @@ class SuccessResponse(BaseModel):
     """Generic success acknowledgment response."""
     success: bool = True
     message: str = "Operation completed successfully"
-    data: Optional[Any] = None
+    data: Any | None = None
 
 
 class ErrorResponse(BaseModel):
     """Standard error response shape returned by global exception handler."""
     success: bool = False
     detail: str
-    error_code: Optional[str] = None
+    error_code: str | None = None
 
 
 class PaginatedResponse(BaseModel, Generic[T]):
@@ -48,7 +49,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     Usage:
         PaginatedResponse[PatientResponse](items=[...], total=100, skip=0, limit=20)
     """
-    items: List[T]
+    items: list[T]
     total: int
     skip: int = 0
     limit: int = 20

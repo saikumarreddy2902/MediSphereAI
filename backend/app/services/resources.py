@@ -1,17 +1,17 @@
 """
 MediSphere AI — Resources Services (Pharmacy & Equipment)
 """
-from typing import List, Dict, Any
-from datetime import date, datetime
-from fastapi import HTTPException, status
-from app.services.base import BaseService
+from datetime import date
+
+from app.models.resources import Equipment, Medicine, MedicineInventory
 from app.repositories.core import (
-    MedicineRepository,
     EquipmentRepository,
-    MedicineInventoryRepository
+    MedicineInventoryRepository,
+    MedicineRepository,
 )
-from app.models.resources import Medicine, Equipment, MedicineInventory
-from app.schemas.pharmacy import InventoryCreate, InventoryAlertResponse
+from app.schemas.pharmacy import InventoryAlertResponse, InventoryCreate
+from app.services.base import BaseService
+from fastapi import HTTPException, status
 
 
 class PharmacyService(BaseService[Medicine]):
@@ -30,7 +30,7 @@ class PharmacyService(BaseService[Medicine]):
             )
         return await self.inventory_repository.create(batch_in)
 
-    async def get_inventory_alerts(self) -> List[InventoryAlertResponse]:
+    async def get_inventory_alerts(self) -> list[InventoryAlertResponse]:
         """Get medicines with low-stock or near-expiry batches."""
         alerts = []
         
@@ -75,7 +75,7 @@ class EquipmentService(BaseService[Equipment]):
     def __init__(self):
         super().__init__(EquipmentRepository())
 
-    async def get_maintenance_due(self) -> List[Equipment]:
+    async def get_maintenance_due(self) -> list[Equipment]:
         """Get equipment due for maintenance."""
         # Equipment due in next 7 days, or already in MAINTENANCE status
         import datetime as dt

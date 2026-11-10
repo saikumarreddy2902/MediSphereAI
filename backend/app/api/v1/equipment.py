@@ -1,20 +1,20 @@
 """
 MediSphere AI — Equipment API
 """
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from app.schemas.equipment import EquipmentCreate, EquipmentResponse, EquipmentUpdate
 from app.services.resources import EquipmentService
-from app.schemas.equipment import EquipmentCreate, EquipmentUpdate, EquipmentResponse
+from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter()
 
 def get_equipment_service() -> EquipmentService:
     return EquipmentService()
 
-@router.get("/", response_model=List[EquipmentResponse])
+@router.get("/", response_model=list[EquipmentResponse])
 async def get_all_equipment(
-    department_id: Optional[str] = None,
-    operational_status: Optional[str] = None,
+    department_id: str | None = None,
+    operational_status: str | None = None,
     service: EquipmentService = Depends(get_equipment_service)
 ):
     """Get all hospital equipment with optional filtering"""
@@ -40,7 +40,7 @@ async def register_equipment(
         )
     return await service.create(eq_in)
 
-@router.get("/maintenance", response_model=List[EquipmentResponse])
+@router.get("/maintenance", response_model=list[EquipmentResponse])
 async def get_maintenance_due(service: EquipmentService = Depends(get_equipment_service)):
     """Get equipment needing maintenance soon or currently in maintenance"""
     return await service.get_maintenance_due()

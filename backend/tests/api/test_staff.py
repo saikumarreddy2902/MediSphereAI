@@ -1,8 +1,8 @@
 """
 MediSphere AI — Staff API Tests
 """
-import pytest
 from fastapi.testclient import TestClient
+
 
 def test_get_staff_list_endpoint(client: TestClient):
     """Test getting staff roster list."""

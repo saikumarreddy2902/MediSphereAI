@@ -4,8 +4,8 @@ MediSphere AI — Medical Record Model
 Structured medical record document supporting multiple clinical record types:
 diagnosis history, medication history, procedures, allergies, and attachments.
 """
-from typing import List, Optional
-from datetime import datetime, date
+from datetime import date
+
 from app.models.base import BaseDocument
 
 
@@ -24,23 +24,23 @@ class MedicalRecord(BaseDocument):
         IMAGING     — radiology / imaging report
     """
     patient_id: str
-    doctor_id: Optional[str] = None
-    department_id: Optional[str] = None
+    doctor_id: str | None = None
+    department_id: str | None = None
 
     record_type: str                          # see Types above
     title: str
     description: str
-    icd_code: Optional[str] = None           # ICD-10 code for diagnosis records
-    severity: Optional[str] = None           # mild | moderate | severe | critical
+    icd_code: str | None = None           # ICD-10 code for diagnosis records
+    severity: str | None = None           # mild | moderate | severe | critical
     date_of_record: date
     is_active: bool = True                   # False = resolved/historical
 
     # Linked resources
-    appointment_id: Optional[str] = None
-    lab_order_id: Optional[str] = None
+    appointment_id: str | None = None
+    lab_order_id: str | None = None
 
     # Attachments (file URLs / presigned S3 links)
-    attachments: List[str] = []
+    attachments: list[str] = []
 
     # Timestamps inherited from BaseDocument via Field(default_factory=utc_now)
     # No custom __init__ needed — BaseDocument handles created_at and updated_at
