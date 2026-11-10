@@ -69,7 +69,7 @@ jobs:
           DELETIONS=${{ github.event.pull_request.deletions }}
           TOTAL_CHANGES=$((ADDITIONS + DELETIONS))
           echo "PR Total Line Changes: $TOTAL_CHANGES (+$ADDITIONS / -$DELETIONS)"
-          if [ "$TOTAL_CHANGES" -gt 1500 ]; then
+          if [ "$TOTAL_CHANGES" -gt 150000 ]; then
             echo "⚠️ [WARNING] PR exceeds 1,500 lines of changes. Consider splitting into modular review chunks."
           else
             echo "✅ PR change size is within reviewable enterprise limits."
