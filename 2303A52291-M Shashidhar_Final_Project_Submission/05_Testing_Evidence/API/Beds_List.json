@@ -1,0 +1,8 @@
+{
+  "method": "GET",
+  "url": "/api/v1/beds/",
+  "status": 401,
+  "data_preview": {
+    "detail": "Not authenticated"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "method": "GET",
+  "url": "/api/v1/appointments/doctor-availability?department=Cardiology&date_str=2026-11-10",
+  "status": 405,
+  "data_preview": {
+    "detail": "Method Not Allowed"
+  }
+}

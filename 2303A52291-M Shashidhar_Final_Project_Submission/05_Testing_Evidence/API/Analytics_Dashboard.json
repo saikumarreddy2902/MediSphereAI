@@ -1,0 +1,8 @@
+{
+  "method": "GET",
+  "url": "/api/v1/analytics/dashboard",
+  "status": 404,
+  "data_preview": {
+    "detail": "Requested resource not found"
+  }
+}

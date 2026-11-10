@@ -1,0 +1,8 @@
+{
+  "method": "GET",
+  "url": "/api/v1/emergency/triage-queue",
+  "status": 404,
+  "data_preview": {
+    "detail": "Requested resource not found"
+  }
+}

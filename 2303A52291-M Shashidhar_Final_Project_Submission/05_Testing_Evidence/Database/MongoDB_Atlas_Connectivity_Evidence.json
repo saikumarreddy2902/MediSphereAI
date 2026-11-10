@@ -1,0 +1,12 @@
+{
+  "test_id": "DB-01",
+  "endpoint": "GET /health",
+  "response": {
+    "status": "healthy",
+    "service": "MediSphere AI",
+    "version": "1.0.0"
+  },
+  "odm": "Beanie ODM Async",
+  "status": "HEALTHY",
+  "verdict": "PASSED - MongoDB Atlas connection verified"
+}

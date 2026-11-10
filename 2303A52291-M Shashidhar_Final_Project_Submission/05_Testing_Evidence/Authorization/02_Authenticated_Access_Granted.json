@@ -1,0 +1,7 @@
+{
+  "test_id": "AUTHZ-02",
+  "endpoint": "GET /api/v1/patients/ (With Bearer Token)",
+  "status_code": 401,
+  "record_count": 1,
+  "verdict": "FAILED"
+}
