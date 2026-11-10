@@ -25,11 +25,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MONGODB_URI=mongodb+srv://2303a52291_db_user:nPxAqk5aS7iPo8QI@cluster0.rw2skdf.mongodb.net/
+      - MONGODB_URI=${MONGODB_URI}
       - DATABASE_NAME=medisphere_db
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
-      - SECRET_KEY=medisphere-super-secret-key-change-in-production
+      - SECRET_KEY=${SECRET_KEY}
       - ENVIRONMENT=production
     depends_on:
       redis:
