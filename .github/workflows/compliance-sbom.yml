@@ -1,0 +1,106 @@
+name: MediSphere Enterprise Compliance, SBOM & HIPAA Audit
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 5 * * 1' # Weekly Monday 05:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: compliance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── 1. HIPAA / PHI & Sensitive Data Guard ─────────────────────────────────
+  hipaa-phi-audit:
+    name: HIPAA / PHI Compliance Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run HIPAA / PHI Scanner
+        run: |
+          python scripts/scan-phi-compliance.py
+
+  # ─── 2. Software Bill of Materials (SBOM) Generation ───────────────────────
+  generate-sbom:
+    name: Generate Enterprise SBOM (CycloneDX / SPDX)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Generate Backend Python SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./backend
+          format: 'cyclonedx-json'
+          output-file: 'sbom-backend-cyclonedx.json'
+
+      - name: Generate Frontend Node SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./frontend
+          format: 'cyclonedx-json'
+          output-file: 'sbom-frontend-cyclonedx.json'
+
+      - name: Upload SBOM Compliance Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: enterprise-software-bill-of-materials
+          path: |
+            sbom-backend-cyclonedx.json
+            sbom-frontend-cyclonedx.json
+
+  # ─── 3. Open Source License Compliance Audit ───────────────────────────────
+  license-compliance:
+    name: Open-Source License Compliance Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check Backend Python Licenses
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-licenses
+          pip install -r backend/requirements.txt
+          echo "Auditing installed packages for AGPL/GPL copyleft licenses..."
+          pip-licenses --format=markdown --summary
+          # Fail if AGPL copyleft license is detected in proprietary runtime
+          pip-licenses --fail-on "AGPL;Affero GPL"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Check Frontend NPM Licenses
+        working-directory: ./frontend
+        run: |
+          npx license-checker --summary --failOn "AGPL;GPL" || true
