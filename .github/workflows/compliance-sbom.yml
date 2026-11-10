@@ -104,3 +104,4 @@ jobs:
         working-directory: ./frontend
         run: |
           npx license-checker --summary --failOn "AGPL;GPL" || true
+

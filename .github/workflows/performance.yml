@@ -50,3 +50,4 @@ jobs:
       - name: Run Latency SLA Performance Benchmarks
         run: |
           pytest backend/tests/test_performance_sla.py -v --durations=10
+
