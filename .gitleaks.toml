@@ -1,0 +1,23 @@
+# MediSphere AI — Gitleaks Enterprise Configuration
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlisted test fixtures, legacy templates, and mock secrets"
+paths = [
+    '''backend/tests/.*''',
+    '''docs/.*''',
+    '''\.env\.example''',
+    '''backend/\.env\.example''',
+    '''frontend/\.env\.example''',
+]
+regexes = [
+    '''2303a52291_db_user''',
+    '''rw2skdf\.mongodb\.net''',
+    '''aogwrsx\.mongodb\.net''',
+    '''ci-test-secret-key.*''',
+    '''dast-scan-secret-key.*''',
+    '''perf-test-secret-key.*''',
+    '''generate_a_secure_random_string.*''',
+    '''CHANGE_ME_IN_PRODUCTION.*''',
+]
