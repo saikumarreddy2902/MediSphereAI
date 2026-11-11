@@ -44,5 +44,7 @@ if __name__ == "__main__":
     host = "0.0.0.0"
     workers = int(os.environ.get("WEB_CONCURRENCY", "1"))
     print(f"[MediSphere] Starting Uvicorn server on {host}:{port} with {workers} worker(s)...")
-    uvicorn.run("start:app", host=host, port=port, reload=False, workers=workers)
-
+    if workers > 1:
+        uvicorn.run("app.main:app", host=host, port=port, reload=False, workers=workers)
+    else:
+        uvicorn.run(app, host=host, port=port)
