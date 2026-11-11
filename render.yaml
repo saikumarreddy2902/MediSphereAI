@@ -24,7 +24,11 @@ services:
       - key: API_VERSION
         value: v1
       - key: MONGODB_URI
+main
         sync: false
+
+        value: ""
+main
       - key: DATABASE_NAME
         value: medisphere_db
       - key: SECRET_KEY
