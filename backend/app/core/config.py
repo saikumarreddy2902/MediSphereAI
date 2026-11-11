@@ -99,4 +99,3 @@ class Settings(BaseSettings):
 
 # Global immutable settings instance
 settings = Settings()
-

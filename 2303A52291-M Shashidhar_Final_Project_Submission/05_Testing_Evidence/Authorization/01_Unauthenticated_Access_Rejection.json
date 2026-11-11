@@ -1,9 +1,0 @@
-{
-  "test_id": "AUTHZ-01",
-  "endpoint": "GET /api/v1/patients/ (No Token)",
-  "status_code": 401,
-  "response": {
-    "detail": "Not authenticated"
-  },
-  "verdict": "PASSED - Correctly blocked with 401"
-}
