@@ -16,16 +16,6 @@ elif [ -f "../requirements.txt" ]; then
     python -m pip install -r ../requirements.txt
 fi
 
-# Editable package install
-if [ -f "setup.py" ]; then
-    echo "Installing package via setup.py"
-    python -m pip install -e .
-fi
-if [ -f "backend/setup.py" ]; then
-    echo "Installing backend package via backend/setup.py"
-    python -m pip install -e ./backend
-fi
-
 # Permanent .pth injection into site-packages
 python -c "
 import site, os
@@ -35,10 +25,11 @@ for sp in sp_list:
         try:
             pth_file = os.path.join(sp, 'medisphere_backend.pth')
             cwd = os.getcwd()
-            backend_dir = os.path.join(cwd, 'backend') if not cwd.endswith('backend') else cwd
+            content = '/opt/render/project/src\n/opt/render/project/src/backend\n/opt/render/project/src/app\n' + cwd + '\n' + os.path.join(cwd, 'backend') + '\n'
+            content += 'import sys, os; [sys.path.insert(0, p) for p in [\'/opt/render/project/src\', \'/opt/render/project/src/backend\', os.getcwd(), os.path.join(os.getcwd(), \'backend\')] if os.path.exists(p) and p not in sys.path]\n'
             with open(pth_file, 'w') as f:
-                f.write(backend_dir + '\n' + cwd + '\n')
-            print(f'Successfully wrote .pth to {pth_file} -> {backend_dir}')
+                f.write(content)
+            print(f'Successfully wrote .pth to {pth_file}')
         except Exception as e:
             print(f'Could not write to {sp}: {e}')
 " || true

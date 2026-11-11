@@ -1,22 +1,38 @@
 services:
-  web:
-    type: web
-    name: medisphere-api
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+  - type: web
+    name: medisphere-ai-api
+    runtime: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: python start.py
+    healthCheckPath: /health
+    autoDeploy: true
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: PYTHONPATH
-        value: "backend:."
+        value: "/opt/render/project/src:/opt/render/project/src/backend:backend:."
       - key: ENVIRONMENT
         value: production
       - key: DEBUG
-        value: "False"
+        value: "false"
+      - key: PROJECT_NAME
+        value: "MediSphere AI"
+      - key: API_VERSION
+        value: v1
       - key: MONGODB_URI
         sync: false
+      - key: DATABASE_NAME
+        value: medisphere_db
       - key: SECRET_KEY
         generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: "7"
       - key: ALLOWED_ORIGINS
-        value: "https://medisphere-ai.vercel.app,http://localhost:3000"
-    healthCheckPath: /health
-    autoDeploy: false
+        sync: false
