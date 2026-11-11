@@ -21,3 +21,4 @@ regexes = [
     '''generate_a_secure_random_string.*''',
     '''CHANGE_ME_IN_PRODUCTION.*''',
 ]
+

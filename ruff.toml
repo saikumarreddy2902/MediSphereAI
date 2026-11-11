@@ -12,3 +12,4 @@ ignore = [
     "E712", # Equality comparison to True/False (needed for Beanie ODM queries)
     "E722", # Bare except (used in resilience fallbacks)
 ]
+

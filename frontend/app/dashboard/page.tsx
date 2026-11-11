@@ -128,106 +128,6 @@ function CustomTooltip({ active, payload, label }: any) {
   )
 }
 
-// ─── Clinical Workstation Heads-Up Display (HUD) ─────────────
-function ClinicalWorkstationHUD({ role = 'admin' }: { role?: string }) {
-  const actions = [
-    {
-      label: 'STAT Emergency Triage',
-      badge: 'Code STAT',
-      badgeColor: '#ef4444',
-      desc: '11 queues · Trauma Level 1',
-      href: '/dashboard/emergency',
-      icon: <ShieldAlert size={18} className="text-red-400" />,
-      accent: '#ef4444',
-    },
-    {
-      label: 'STAT Laboratory',
-      badge: '3 Critical',
-      badgeColor: '#f59e0b',
-      desc: 'Troponin & biochemistry',
-      href: '/dashboard/laboratory',
-      icon: <Microscope size={18} className="text-amber-400" />,
-      accent: '#f59e0b',
-    },
-    {
-      label: 'Bed Intelligence',
-      badge: '91.2% Occupancy',
-      badgeColor: '#8b5cf6',
-      desc: 'ICU & ward capacity',
-      href: '/dashboard/beds',
-      icon: <Bed size={18} className="text-purple-400" />,
-      accent: '#8b5cf6',
-    },
-    {
-      label: 'e-Prescription & Rx',
-      badge: 'CDSS Guard',
-      badgeColor: '#10b981',
-      desc: 'Allergy & safety screening',
-      href: '/dashboard/prescriptions',
-      icon: <Pill size={18} className="text-emerald-400" />,
-      accent: '#10b981',
-    },
-    {
-      label: 'Vitals Monitor',
-      badge: 'Telemetry',
-      badgeColor: '#0ea5e9',
-      desc: 'Bedside streaming telemetry',
-      href: '/dashboard/vitals',
-      icon: <Activity size={18} className="text-sky-400 vitals-pulse" />,
-      accent: '#0ea5e9',
-    },
-    {
-      label: 'Patient Flow EMR',
-      badge: 'Care Mesh',
-      badgeColor: '#6366f1',
-      desc: 'Admissions & discharges',
-      href: '/dashboard/patients',
-      icon: <Users size={18} className="text-indigo-400" />,
-      accent: '#6366f1',
-    },
-  ]
-
-  return (
-    <div className="space-y-2 mb-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold tracking-wider uppercase text-slate-400 flex items-center gap-1.5">
-          <Sparkles size={13} className="text-sky-400" /> Clinical Workstation Heads-Up Display (HUD)
-        </span>
-        <span className="text-[11px] font-mono text-emerald-400 font-medium">FHIR R4 • HIPAA Sealed</span>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        {actions.map((act) => (
-          <Link
-            key={act.label}
-            href={act.href}
-            className="clinical-hud-card group"
-            style={{ borderLeft: `3px solid ${act.accent}` }}
-          >
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                 style={{ background: `${act.accent}15` }}>
-              {act.icon}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1">
-                <span className="text-xs font-bold truncate text-slate-100 group-hover:text-sky-300 transition-colors">
-                  {act.label}
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 truncate">{act.desc}</p>
-              <span
-                className="text-[9px] font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5"
-                style={{ background: `${act.badgeColor}20`, color: act.badgeColor }}
-              >
-                {act.badge}
-              </span>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // ─── 1. EXECUTIVE / ADMIN DASHBOARD ───────────────────────────
 function ExecutiveDashboard() {
   const [kpis, setKpis] = useState(mockKPIs)
@@ -287,9 +187,6 @@ function ExecutiveDashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Clinical Heads-Up Display (HUD) */}
-      <ClinicalWorkstationHUD role="admin" />
-
       {/* Alert Banner */}
       <div className="flex items-center gap-3 px-5 py-4 rounded-xl shadow-[0_4px_24px_rgba(239,68,68,0.15)]"
            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', backdropFilter: 'blur(12px)' }}>
@@ -576,9 +473,6 @@ function DoctorDashboard() {
         </div>
       </div>
 
-      {/* Clinical Heads-Up Display (HUD) */}
-      <ClinicalWorkstationHUD role="doctor" />
-
       {/* KPI Cards for Doctor */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
@@ -732,9 +626,6 @@ function NurseDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Clinical Heads-Up Display (HUD) */}
-      <ClinicalWorkstationHUD role="nurse" />
 
       {/* Ward Occupancy Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

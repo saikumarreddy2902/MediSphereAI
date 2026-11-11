@@ -518,42 +518,4 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* ─── Clinical Workstation HUD & HMS Ergonomics ──────────────────────────────── */
-.clinical-hud-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0.875rem;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(10, 15, 29, 0.85) 100%);
-  border: 1px solid rgba(56, 189, 248, 0.15);
-  backdrop-filter: blur(16px);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  text-decoration: none;
-}
-.clinical-hud-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 8px 24px -4px rgba(14, 165, 233, 0.2), 0 0 16px rgba(14, 165, 233, 0.1);
-}
-html.light .clinical-hud-card, body.light .clinical-hud-card {
-  background: #ffffff !important;
-  border: 1px solid rgba(14, 165, 233, 0.2) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
-}
-html.light .clinical-hud-card:hover, body.light .clinical-hud-card:hover {
-  border-color: rgba(14, 165, 233, 0.5) !important;
-  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.15) !important;
-}
-
-/* Clinical Telemetry Pulse Effect */
-@keyframes ecg-vitals-pulse {
-  0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.04); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.8; }
-}
-.vitals-pulse {
-  animation: ecg-vitals-pulse 2s ease-in-out infinite;
-}
-
 

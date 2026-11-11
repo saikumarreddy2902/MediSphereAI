@@ -75,13 +75,24 @@ export default function DepartmentQueuePage() {
   const [queueData, setQueueData] = useState<any>(null)
 
   // WebSocket Live Push Feed for the selected Department
-  const defaultWsBase = process.env.NEXT_PUBLIC_WS_URL || (
-    process.env.NEXT_PUBLIC_API_URL
-      ? process.env.NEXT_PUBLIC_API_URL.replace(/^https?:\/\//, (m) => m === 'https://' ? 'wss://' : 'ws://').replace(/\/+$/, '')
-      : 'ws://localhost:8000'
-  );
-  const cleanWsBase = defaultWsBase.replace(/\/api\/v1.*$/, '');
-  const departmentWsUrl = `${cleanWsBase}/api/v1/ws/department/${encodeURIComponent(selectedDept)}`;
+  const getDepartmentWsUrl = () => {
+    if (process.env.NEXT_PUBLIC_WS_URL) {
+      const base = process.env.NEXT_PUBLIC_WS_URL.replace(/\/api\/v1.*$/, '');
+      return `${base}/api/v1/ws/department/${encodeURIComponent(selectedDept)}`;
+    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (apiUrl && (apiUrl.startsWith('http://') || apiUrl.startsWith('https://'))) {
+      const wsScheme = apiUrl.startsWith('https://') ? 'wss://' : 'ws://';
+      const cleanUrl = apiUrl.replace(/^https?:\/\//, '').replace(/\/api\/v1.*$/, '').replace(/\/+$/, '');
+      return `${wsScheme}${cleanUrl}/api/v1/ws/department/${encodeURIComponent(selectedDept)}`;
+    }
+    if (typeof window !== 'undefined') {
+      const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${wsProto}//${window.location.host}/api/v1/ws/department/${encodeURIComponent(selectedDept)}`;
+    }
+    return `ws://localhost:8000/api/v1/ws/department/${encodeURIComponent(selectedDept)}`;
+  };
+  const departmentWsUrl = getDepartmentWsUrl();
   const { isConnected: wsConnected, lastMessage } = useWebSocket(departmentWsUrl);
 
   // Process incoming real-time WebSocket events

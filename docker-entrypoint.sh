@@ -44,3 +44,4 @@ trap "echo 'Terminating MediSphere services...'; kill -TERM $BACKEND_PID $FRONTE
 
 # Wait for any process to terminate
 wait -n
+

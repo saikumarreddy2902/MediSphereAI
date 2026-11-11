@@ -73,3 +73,4 @@ HEALTHCHECK --interval=20s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -f http://localhost:${PORT:-10000}/health || exit 1
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
+
