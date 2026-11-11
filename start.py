@@ -45,3 +45,4 @@ if __name__ == "__main__":
     workers = int(os.environ.get("WEB_CONCURRENCY", "1"))
     print(f"[MediSphere] Starting Uvicorn server on {host}:{port} with {workers} worker(s)...")
     uvicorn.run("start:app", host=host, port=port, reload=False, workers=workers)
+
