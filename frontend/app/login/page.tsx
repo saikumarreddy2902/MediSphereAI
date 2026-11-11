@@ -157,7 +157,7 @@ export default function LoginPage() {
   }
 
   const demoAccounts = [
-    { label: 'Administrator', username: 'admin',   password: 'admin123',   color: '#6366f1' },
+    { label: 'Administrator', username: 'admin',   password: 'admin123',   color: '#0ea5e9' },
     { label: 'Doctor',        username: 'doctor',  password: 'doctor123',  color: '#10b981' },
     { label: 'Nurse',         username: 'nurse',   password: 'nurse123',   color: '#f59e0b' },
     { label: 'Patient',       username: 'patient', password: 'patient123', color: '#ec4899' },
@@ -195,13 +195,13 @@ export default function LoginPage() {
         {/* Main Card */}
         <div className="glass-card p-6 md:p-8">
           {/* Mode Switch Tabs */}
-          <div className="flex rounded-xl p-1 mb-6" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex rounded-xl p-1 mb-6" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(56,189,248,0.12)' }}>
             <button
               type="button"
               onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
               className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
                 mode === 'login'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/20'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -212,7 +212,7 @@ export default function LoginPage() {
               onClick={() => { setMode('register'); setError(''); setSuccessMsg(''); }}
               className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
                 mode === 'register'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/20'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -280,9 +280,9 @@ export default function LoginPage() {
                 id="login-submit"
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 mt-2 shadow-lg shadow-indigo-500/20"
+                className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 mt-2 shadow-lg shadow-sky-500/25"
                 style={{
-                  background: loading ? 'rgba(99,102,241,0.5)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  background: loading ? 'rgba(14,165,233,0.5)' : 'linear-gradient(135deg, #0ea5e9, #6366f1)',
                   color: 'white',
                   cursor: loading ? 'not-allowed' : 'pointer',
                 }}

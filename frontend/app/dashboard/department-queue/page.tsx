@@ -75,9 +75,12 @@ export default function DepartmentQueuePage() {
   const [queueData, setQueueData] = useState<any>(null)
 
   // WebSocket Live Push Feed for the selected Department
-  const wsBase = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/api/v1/ws/dashboard';
-  // Strip any specific endpoint suffix to get the base server URL (ws://host:port)
-  const cleanWsBase = wsBase.replace(/\/api\/v1\/.*$/, '');
+  const defaultWsBase = process.env.NEXT_PUBLIC_WS_URL || (
+    process.env.NEXT_PUBLIC_API_URL
+      ? process.env.NEXT_PUBLIC_API_URL.replace(/^https?:\/\//, (m) => m === 'https://' ? 'wss://' : 'ws://').replace(/\/+$/, '')
+      : 'ws://localhost:8000'
+  );
+  const cleanWsBase = defaultWsBase.replace(/\/api\/v1.*$/, '');
   const departmentWsUrl = `${cleanWsBase}/api/v1/ws/department/${encodeURIComponent(selectedDept)}`;
   const { isConnected: wsConnected, lastMessage } = useWebSocket(departmentWsUrl);
 

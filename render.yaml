@@ -34,5 +34,5 @@ services:
       - key: REFRESH_TOKEN_EXPIRE_DAYS
         value: "7"
       - key: ALLOWED_ORIGINS
-        sync: false
+        value: "https://medisphere-ai.vercel.app,http://localhost:3000"
 

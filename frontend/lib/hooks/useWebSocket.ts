@@ -7,12 +7,27 @@ export interface WSMessage {
   timestamp?: string;
 }
 
+function getResolvedWsUrl(explicitUrl?: string): string {
+  if (explicitUrl) return explicitUrl;
+  if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (apiUrl) {
+    const wsScheme = apiUrl.startsWith('https://') ? 'wss://' : 'ws://';
+    const cleanUrl = apiUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+    if (cleanUrl.endsWith('/api/v1')) {
+      return `${wsScheme}${cleanUrl}/ws/dashboard`;
+    }
+    return `${wsScheme}${cleanUrl}/api/v1/ws/dashboard`;
+  }
+  return 'ws://localhost:8000/api/v1/ws/dashboard';
+}
+
 /**
  * Custom React Hook for Real-Time Streaming over WebSocket
  * Connects to MediSphere AI FastAPI WebSocket endpoint with auto-reconnect logic.
  */
 export function useWebSocket(url?: string) {
-  const wsUrl = url || process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/api/v1/ws/dashboard';
+  const wsUrl = getResolvedWsUrl(url);
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WSMessage | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
