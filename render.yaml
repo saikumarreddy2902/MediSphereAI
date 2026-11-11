@@ -36,7 +36,7 @@ services:
       - key: REFRESH_TOKEN_EXPIRE_DAYS
         value: "7"
       - key: ALLOWED_ORIGINS
-        value: "https://medisphere-ai.vercel.app,http://localhost:3000,http://127.0.0.1:3000"
+        value: "https://medisphere-ai-frontend.onrender.com,https://medisphere-ai.onrender.com,https://medisphere-ai.vercel.app,http://localhost:3000"
 
   # ─── 2. Next.js Frontend Web Service ─────────────────────────────────────────
   - type: web
@@ -52,6 +52,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20.18.0
+      - key: NODE_ENV
+        value: production
       - key: NEXT_PUBLIC_API_URL
         value: "https://medisphere-ai-api.onrender.com/api/v1"
       - key: NEXT_PUBLIC_WS_URL

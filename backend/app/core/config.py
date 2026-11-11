@@ -69,9 +69,10 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
         "https://medisphere-ai.vercel.app",
         "https://medisphere-ai.onrender.com",
+        "https://medisphere-ai-frontend.onrender.com",
     ]
-    # Permits any Vercel preview or production deployment domain without manual CORS config
-    ALLOWED_ORIGIN_REGEX: str | None = r"^https:\/\/.*\.vercel\.app$"
+    # Permits any Vercel or Render frontend domain dynamically with full credentials support
+    ALLOWED_ORIGIN_REGEX: str | None = r"^https:\/\/(.*\.)?(vercel\.app|onrender\.com)$"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
