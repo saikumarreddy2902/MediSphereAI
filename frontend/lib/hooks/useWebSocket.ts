@@ -11,13 +11,17 @@ function getResolvedWsUrl(explicitUrl?: string): string {
   if (explicitUrl) return explicitUrl;
   if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (apiUrl) {
+  if (apiUrl && (apiUrl.startsWith('http://') || apiUrl.startsWith('https://'))) {
     const wsScheme = apiUrl.startsWith('https://') ? 'wss://' : 'ws://';
     const cleanUrl = apiUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '');
     if (cleanUrl.endsWith('/api/v1')) {
       return `${wsScheme}${cleanUrl}/ws/dashboard`;
     }
     return `${wsScheme}${cleanUrl}/api/v1/ws/dashboard`;
+  }
+  if (typeof window !== 'undefined') {
+    const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${wsProto}//${window.location.host}/api/v1/ws/dashboard`;
   }
   return 'ws://localhost:8000/api/v1/ws/dashboard';
 }

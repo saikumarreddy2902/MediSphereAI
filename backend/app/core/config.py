@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "qwen3:8b"
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
+    # ─── OpenRouter / Cloud LLM Assistant Configuration ──────────────────────────
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    OPENROUTER_MODEL: str = "openrouter/auto"
+
     # ─── Authentication & JWT Security Configuration ─────────────────────────────
     # MUST be overridden in production via SECRET_KEY env var
     SECRET_KEY: str = "CHANGE_ME_IN_PRODUCTION_USE_256BIT_RANDOM"
@@ -69,9 +74,10 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
         "https://medisphere-ai.vercel.app",
         "https://medisphere-ai.onrender.com",
+        "https://medisphere-ai-frontend.onrender.com",
     ]
-    # Permits any Vercel preview or production deployment domain without manual CORS config
-    ALLOWED_ORIGIN_REGEX: str | None = r"^https:\/\/.*\.vercel\.app$"
+    # Permits any Vercel or Render frontend domain dynamically with full credentials support
+    ALLOWED_ORIGIN_REGEX: str | None = r"^https:\/\/(.*\.)?(vercel\.app|onrender\.com)$"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod

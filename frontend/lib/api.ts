@@ -2,7 +2,13 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosE
 import { useAuthStore } from '@/store/useAuthStore';
 
 function getResolvedApiBaseUrl(): string {
-  let url = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').trim();
+  let url = (process.env.NEXT_PUBLIC_API_URL || '').trim();
+  if (!url) {
+    if (typeof window !== 'undefined') {
+      return '/api/v1';
+    }
+    return 'http://localhost:8000/api/v1';
+  }
   url = url.replace(/\/+$/, '');
   if (!url.includes('/api/v1')) {
     url = `${url}/api/v1`;

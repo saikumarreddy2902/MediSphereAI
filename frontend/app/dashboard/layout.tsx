@@ -359,6 +359,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </p>
           </div>
 
+          {/* Clinical Hospital Trust & Accreditation Indicator */}
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl border"
+               style={{
+                 background: isDark ? 'rgba(14, 165, 233, 0.08)' : 'rgba(14, 165, 233, 0.08)',
+                 borderColor: isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(14, 165, 233, 0.25)',
+               }}>
+            <ShieldCheck size={15} className="text-sky-400 flex-shrink-0" />
+            <span className="text-[11px] font-semibold tracking-wide" style={{ color: isDark ? '#38bdf8' : '#0284c7' }}>
+              NABH &amp; JCI Accredited • 24/7 Care Mesh
+            </span>
+          </div>
+
+          {/* STAT Emergency Hotline */}
+          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border"
+               style={{
+                 background: isDark ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.06)',
+                 borderColor: isDark ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.2)',
+               }}>
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+            <span className="text-[11px] font-bold text-rose-400">STAT: 108</span>
+          </div>
+
           <div className="flex items-center gap-3">
             {/* Quick RBAC Role Switcher */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs"

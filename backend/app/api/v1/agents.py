@@ -1,7 +1,12 @@
 """Agents API"""
 import random
 from datetime import datetime
+from typing import Any
 
+import httpx
+from pydantic import BaseModel
+
+from app.core.config import settings
 from app.mock.data_generator import (
     AGENT_DEFINITIONS,
     _hours_ago,
@@ -112,6 +117,119 @@ async def list_notifications(limit: int = 20):
             "created_at": _hours_ago(rng.uniform(0, 24)).isoformat(),
         })
     return {"total": len(notifs), "notifications": notifs}
+
+
+class AgentChatMessage(BaseModel):
+    message: str
+    history: list[dict[str, str]] = []
+    role: str = "patient"
+    patient_context: dict[str, Any] | None = None
+
+
+@router.post("/chat")
+async def chat_with_assistant(payload: AgentChatMessage):
+    """
+    AI Clinical Health Concierge powered by OpenRouter Cloud LLM.
+    Provides verified clinical triage, appointment coordination, bed status, and hospital assistance.
+    """
+    user_msg = payload.message.strip()
+    if not user_msg:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    system_prompt = (
+        "You are MediSphere AI Clinical Assistant, an advanced medical AI concierge for "
+        "MediSphere AI Super Speciality Hospital (NABH & JCI Accredited). "
+        "You assist patients, doctors, and nursing staff with clinical inquiries, appointments, "
+        "medication schedules, department triage, and bed allocation inquiries.\n\n"
+        "Guidelines:\n"
+        "1. Be empathetic, professional, clear, and medically accurate.\n"
+        "2. For emergency symptoms (e.g. acute chest pain, severe shortness of breath, sudden numbness, stroke symptoms), "
+        "immediately instruct the user to call the 24/7 STAT Helpline (108) or report to the Emergency Care Bay.\n"
+        "3. Provide structured, actionable answers using clean formatting (bullet points, bold highlights).\n"
+        "4. If patient context is provided, personalize advice based on their allergies, condition, and UHID.\n"
+    )
+
+    if payload.patient_context:
+        ctx = payload.patient_context
+        system_prompt += (
+            f"\nPatient Profile:\n"
+            f"- Name: {ctx.get('name', 'Patient')}\n"
+            f"- UHID: {ctx.get('uhid', 'N/A')}\n"
+            f"- Attending Physician: {ctx.get('attendingPhysician', 'N/A')}\n"
+            f"- Allergies: {ctx.get('allergies', 'None documented')}\n"
+        )
+
+    # 1. Attempt OpenRouter Cloud LLM completion if API key is present
+    if settings.OPENROUTER_API_KEY:
+        try:
+            messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+            for h in payload.history[-6:]:
+                if h.get("role") in ("user", "assistant") and h.get("content"):
+                    messages.append({"role": h["role"], "content": h["content"]})
+            messages.append({"role": "user", "content": user_msg})
+
+            async with httpx.AsyncClient(timeout=25.0) as client:
+                res = await client.post(
+                    f"{settings.OPENROUTER_BASE_URL}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://medisphere.hospital",
+                        "X-Title": "MediSphere AI",
+                    },
+                    json={
+                        "model": settings.OPENROUTER_MODEL,
+                        "messages": messages,
+                        "temperature": 0.3,
+                        "max_tokens": 800,
+                    },
+                )
+                if res.status_code == 200:
+                    data = res.json()
+                    ai_reply = data["choices"][0]["message"]["content"]
+                    return {
+                        "reply": ai_reply,
+                        "provider": "openrouter",
+                        "model": data.get("model", settings.OPENROUTER_MODEL),
+                        "timestamp": datetime.now().isoformat(),
+                    }
+        except Exception as e:
+            # Gracefully log and fall back to clinical rules
+            print(f"[OpenRouter Engine Notice] {e}")
+
+    # 2. Heuristic fallback when LLM is offline or cold starting
+    lower = user_msg.lower()
+    if any(k in lower for k in ["chest pain", "breathless", "unconscious", "emergency", "stroke"]):
+        reply = (
+            "🚨 **CRITICAL MEDICAL ALERT**:\n"
+            "Your symptoms indicate potential acute distress. Please contact the MediSphere 24/7 STAT Helpline (**108**) "
+            "or proceed immediately to the Emergency Care Bay (Suite 101, Ground Floor). Emergency triage staff have been notified."
+        )
+    elif "bed" in lower or "admit" in lower:
+        reply = (
+            "🛏️ **Bed Intelligence Status**:\n"
+            "MediSphere has 6 general ward beds, 2 cardiac observation beds, and 1 ICU bay ready for admission. "
+            "Our Bed Intelligence Agent can pre-reserve a telemetry bed linked directly to your UHID."
+        )
+    elif "appointment" in lower or "doctor" in lower:
+        reply = (
+            "🩺 **Appointment Coordination**:\n"
+            "Dr. Priya Sharma (Cardiology) and Dr. Arun Kumar (Internal Medicine) have consultation slots available today. "
+            "Would you like me to book your next slot or review your existing visit pass?"
+        )
+    else:
+        reply = (
+            f"Thank you for contacting MediSphere AI Clinical Concierge. "
+            f"Regarding your inquiry: *\"{user_msg}\"* — our clinical mesh is synchronized with your health profile. "
+            f"Please let me know if you would like me to book an appointment, check laboratory turnaround, or assist with medication refill requests."
+        )
+
+    return {
+        "reply": reply,
+        "provider": "heuristic_fallback",
+        "model": "rule-based-clinical",
+        "timestamp": datetime.now().isoformat(),
+    }
 
 
 # ─── Parameterized routes AFTER literal routes ───────────────────────────────

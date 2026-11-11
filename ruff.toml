@@ -1,0 +1,15 @@
+# Ruff configuration for MediSphere AI
+target-version = "py311"
+line-length = 120
+
+[lint]
+select = ["E", "F"]
+ignore = [
+    "E501", # Line length handled by formatter
+    "E402", # Module level import not at top of file
+    "F401", # Module imported but unused (common in re-exports and routers)
+    "F841", # Local variable name is assigned to but never used
+    "E712", # Equality comparison to True/False (needed for Beanie ODM queries)
+    "E722", # Bare except (used in resilience fallbacks)
+]
+

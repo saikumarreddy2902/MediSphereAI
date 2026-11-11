@@ -210,51 +210,84 @@ Format your response as structured JSON.
         insights = {}
 
         try:
-            # 3. Call Ollama (JSON Mode if supported or standard request)
-            # Fast safeguard timeout so background loops aren't blocked when Ollama is offline
-            async with httpx.AsyncClient(timeout=1.0) as httpx_client:
-                response = await httpx_client.post(
-                    f"{settings.OLLAMA_BASE_URL}/api/generate",
-                    json={
-                        "model": settings.OLLAMA_MODEL,
-                        "prompt": prompt,
-                        "stream": False,
-                        "format": "json"
-                    }
-                )
+            response_text = ""
+            # 3. Call OpenRouter Cloud LLM (if configured) or local Ollama
+            if settings.OPENROUTER_API_KEY:
+                async with httpx.AsyncClient(timeout=10.0) as httpx_client:
+                    res = await httpx_client.post(
+                        f"{settings.OPENROUTER_BASE_URL}/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+                            "Content-Type": "application/json",
+                            "HTTP-Referer": "https://medisphere.hospital",
+                            "X-Title": "MediSphere AI",
+                        },
+                        json={
+                            "model": settings.OPENROUTER_MODEL,
+                            "messages": [
+                                {
+                                    "role": "system",
+                                    "content": (
+                                        "You are an autonomous clinical AI agent in MediSphere AI hospital management system. "
+                                        "Analyze telemetry and respond strictly with a valid JSON object containing "
+                                        "'recommendations', 'alerts', and 'insights'."
+                                    )
+                                },
+                                {"role": "user", "content": prompt}
+                            ],
+                            "response_format": {"type": "json_object"}
+                        }
+                    )
+                    if res.status_code == 200:
+                        data = res.json()
+                        response_text = data["choices"][0]["message"]["content"].strip()
+                    else:
+                        raise Exception(f"OpenRouter returned status {res.status_code}: {res.text}")
+            else:
+                # Fast safeguard timeout so background loops aren't blocked when Ollama is offline
+                async with httpx.AsyncClient(timeout=1.0) as httpx_client:
+                    response = await httpx_client.post(
+                        f"{settings.OLLAMA_BASE_URL}/api/generate",
+                        json={
+                            "model": settings.OLLAMA_MODEL,
+                            "prompt": prompt,
+                            "stream": False,
+                            "format": "json"
+                        }
+                    )
+                    if response.status_code == 200:
+                        result = response.json()
+                        response_text = result.get("response", "").strip()
+                    else:
+                        raise Exception(f"Ollama returned status code {response.status_code}")
+            
+            if response_text:
+                # Parse output JSON
+                parsed = json.loads(response_text)
+                recommendations = [self.format_recommendation(
+                    r.get("title", ""),
+                    r.get("description", ""),
+                    r.get("priority", "medium"),
+                    r.get("impact", "")
+                ) for r in parsed.get("recommendations", [])]
                 
-                if response.status_code == 200:
-                    result = response.json()
-                    response_text = result.get("response", "").strip()
-                    
-                    # Parse output JSON
-                    parsed = json.loads(response_text)
-                    recommendations = [self.format_recommendation(
-                        r.get("title", ""),
-                        r.get("description", ""),
-                        r.get("priority", "medium"),
-                        r.get("impact", "")
-                    ) for r in parsed.get("recommendations", [])]
-                    
-                    alerts = [self.format_alert(
-                        a.get("title", ""),
-                        a.get("message", ""),
-                        a.get("severity", "warning")
-                    ) for a in parsed.get("alerts", [])]
-                    
-                    insights = parsed.get("insights", {})
-                    
-                    # 4. Save new insights to Qdrant
-                    try:
-                        vector_store.upsert_document(
-                            "medisphere_knowledge",
-                            response_text,
-                            {"agent": self.agent_name, "category": self.category}
-                        )
-                    except Exception as e:
-                        print(f"RAG upsert error: {e}")
-                else:
-                    raise Exception(f"Ollama returned status code {response.status_code}")
+                alerts = [self.format_alert(
+                    a.get("title", ""),
+                    a.get("message", ""),
+                    a.get("severity", "warning")
+                ) for a in parsed.get("alerts", [])]
+                
+                insights = parsed.get("insights", {})
+                
+                # 4. Save new insights to Qdrant
+                try:
+                    vector_store.upsert_document(
+                        "medisphere_knowledge",
+                        response_text,
+                        {"agent": self.agent_name, "category": self.category}
+                    )
+                except Exception as e:
+                    print(f"RAG upsert error: {e}")
                     
         except Exception as e:
             print(f"Ollama execution failed for {self.agent_name}: {e}. Falling back to default heuristics.")
