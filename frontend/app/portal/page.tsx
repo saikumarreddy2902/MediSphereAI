@@ -8,6 +8,7 @@ import {
   Phone, Sparkles, Send, RefreshCw, UserCheck
 } from 'lucide-react'
 import { printPrescriptionDocument, printInvoiceDocument } from '@/lib/print-document'
+import { api } from '@/lib/api'
 
 export default function PortalHomePage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'prescriptions' | 'records' | 'bills' | 'chat'>('overview')
@@ -90,7 +91,7 @@ export default function PortalHomePage() {
     { id: 'INV-3982', service: 'Biochemistry Panel & Glycemic Evaluation', date: '22 Oct 2026', amount: 2400, insurance_covered: 2400, patient_due: 0, status: 'PAID' },
   ]
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!chatInput.trim()) return
     const userText = chatInput.trim()
     const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
@@ -98,6 +99,28 @@ export default function PortalHomePage() {
 
     setChatMessages((prev) => [...prev, newMsg])
     setChatInput('')
+
+    try {
+      const res = await api.post('/agents/chat', {
+        message: userText,
+        role: 'patient',
+        history: chatMessages.map(m => ({ role: m.role, content: m.text })),
+        patient_context: {
+          name: patient.name,
+          uhid: patient.uhid,
+          abha: patient.abha_id,
+        }
+      })
+      if (res.data?.reply) {
+        setChatMessages((prev) => [
+          ...prev,
+          { role: 'assistant', text: res.data.reply, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) },
+        ])
+        return
+      }
+    } catch {
+      // Gracefully fall back to local clinical response if server is cold-starting
+    }
 
     setTimeout(() => {
       let reply = `Thank you for your inquiry, Rajesh Kumar ji. Regarding "${userText}": Dr. Priya Sharma has reviewed your recent telemetry and confirmed your blood pressure is well within the target range (128/82 mmHg). If you need an instant prescription refill or room modification, I can schedule that immediately.`
@@ -111,7 +134,7 @@ export default function PortalHomePage() {
         ...prev,
         { role: 'assistant', text: reply, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) },
       ])
-    }, 600)
+    }, 400)
   }
 
   const handlePrintRx = (rx: any) => {

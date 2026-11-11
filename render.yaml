@@ -38,6 +38,10 @@ services:
         value: "7"
       - key: ALLOWED_ORIGIN_REGEX
         value: "^https://.*\\.onrender\\.com$"
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: "openrouter/auto"
 
   # ─── MediSphere AI Frontend (Next.js App Router) ────────────────────────────
   - type: web

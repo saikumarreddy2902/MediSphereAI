@@ -6,6 +6,7 @@ import {
   ShieldCheck, ArrowRight, Activity, FileText
 } from 'lucide-react'
 import { agentBookAppointmentApi, agentAutoAllocateBedApi } from '@/lib/services/api-service'
+import { api } from '@/lib/api'
 import Link from 'next/link'
 
 export type ChatMode = 'triage' | 'appointments' | 'beds' | 'medication' | 'records'
@@ -433,10 +434,24 @@ export default function AIChatbot() {
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
-      // 6. HEALTHCARE ISSUES & SYMPTOM TRIAGE GUIDANCE
+      // 6. HEALTHCARE ISSUES & SYMPTOM TRIAGE GUIDANCE (OpenRouter Cloud LLM)
       // ═══════════════════════════════════════════════════════════════════════════
+      let aiText = ''
+      try {
+        const chatRes = await api.post('/agents/chat', {
+          message: query,
+          role: 'patient',
+          patient_context: patientProfile,
+        })
+        if (chatRes.data?.reply) {
+          aiText = chatRes.data.reply
+        }
+      } catch {
+        // Fall back to rule-based triage
+      }
+
       const matched = mapProblemToSpecialty(query)
-      const triageText = 
+      const triageText = aiText || (
         `🩺 **Clinical Triage & Health Guidance for Rajesh Kumar**:\n\n` +
         `• **Evaluated Symptoms**: *"${query}"*\n` +
         `• **Recommended Medical Specialty**: **${matched.specialty}**\n` +
@@ -444,6 +459,7 @@ export default function AIChatbot() {
         `• **Clinical Urgency Assessment**: \`${matched.urgency}\`\n\n` +
         `💡 **Recommended Next Step**:\n` +
         `I can automatically book your consultation with ${matched.doctorName} right now! Simply click below or type **"Confirm booking"** to issue your official appointment pass.`
+      )
 
       setMessages(prev => [
         ...prev,
