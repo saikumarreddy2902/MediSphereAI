@@ -24,7 +24,7 @@ services:
       - key: API_VERSION
         value: v1
       - key: MONGODB_URI
-        value: "mongodb+srv://2303a52291_db_user:FnUHQZpaUB0L4bXM@cluster0.aogwrsx.mongodb.net/"
+        value: ""
       - key: DATABASE_NAME
         value: medisphere_db
       - key: SECRET_KEY
