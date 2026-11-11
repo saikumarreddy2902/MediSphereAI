@@ -24,11 +24,11 @@ services:
       - key: API_VERSION
         value: v1
       - key: MONGODB_URI
-        value: "mongodb+srv://2303a52291_db_user:FnUHQZpaUB0L4bXM@cluster0.aogwrsx.mongodb.net/"
+        sync: false
       - key: DATABASE_NAME
         value: medisphere_db
       - key: SECRET_KEY
-        value: "medisphere-super-secret-key-change-in-production-use-128-char-random-hex"
+        generateValue: true
       - key: JWT_ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
@@ -36,7 +36,7 @@ services:
       - key: REFRESH_TOKEN_EXPIRE_DAYS
         value: "7"
       - key: ALLOWED_ORIGINS
-        value: "*"
+        value: "https://medisphere-ai.vercel.app,http://localhost:3000,http://127.0.0.1:3000"
 
   # ─── 2. Next.js Frontend Web Service ─────────────────────────────────────────
   - type: web

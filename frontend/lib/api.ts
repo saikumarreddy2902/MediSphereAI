@@ -1,6 +1,15 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
+function getResolvedApiBaseUrl(): string {
+  let url = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').trim();
+  url = url.replace(/\/+$/, '');
+  if (!url.includes('/api/v1')) {
+    url = `${url}/api/v1`;
+  }
+  return url;
+}
+
 /**
  * MediSphere AI — Centralized Axios HTTP Client
  * 
@@ -8,7 +17,7 @@ import { useAuthStore } from '@/store/useAuthStore';
  * and global 401 Unauthorized handling for dynamic session eviction.
  */
 export const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: getResolvedApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },

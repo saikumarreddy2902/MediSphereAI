@@ -8,36 +8,36 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // MediSphere AI Brand Palette
+        // MediSphere AI Modern Clinical Healthcare Palette
         brand: {
-          50:  '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',  // Primary
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
+          50:  '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9',  // Primary Clinical Sky/Cyan
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
         },
         // Status Colors
         critical: '#ef4444',
         warning:  '#f59e0b',
         success:  '#10b981',
-        info:     '#3b82f6',
-        // Dark Theme Surfaces
+        info:     '#0ea5e9',
+        // Modern Clinical Slate Surfaces
         surface: {
-          50:  '#1e1e2e',
-          100: '#181825',
-          200: '#13131e',
-          300: '#0f0f18',
-          400: '#0a0a12',
+          50:  '#1e293b',
+          100: '#0f172a',
+          200: '#0c1322',
+          300: '#0a0f1d',
+          400: '#060913',
         },
-        // Card / Elevated surfaces
+        // Elevated Glass Card Surfaces
         card: {
-          DEFAULT: 'rgba(30, 30, 46, 0.8)',
-          hover:   'rgba(40, 40, 60, 0.9)',
+          DEFAULT: 'rgba(15, 23, 42, 0.82)',
+          hover:   'rgba(30, 41, 59, 0.92)',
         }
       },
       fontFamily: {
@@ -47,18 +47,18 @@ module.exports = {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'mesh-gradient': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'brand-gradient': 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)',
-        'dark-gradient': 'linear-gradient(180deg, #13131e 0%, #0f0f18 100%)',
-        'glass-gradient': 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.0) 100%)',
+        'mesh-gradient': 'linear-gradient(135deg, #0284c7 0%, #0f766e 100%)',
+        'brand-gradient': 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 45%, #6366f1 100%)',
+        'dark-gradient': 'linear-gradient(180deg, #0f172a 0%, #0a0f1d 100%)',
+        'glass-gradient': 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.0) 100%)',
       },
       boxShadow: {
-        'glow-brand': '0 0 30px rgba(99, 102, 241, 0.3)',
+        'glow-brand': '0 0 30px rgba(14, 165, 233, 0.3)',
         'glow-critical': '0 0 30px rgba(239, 68, 68, 0.3)',
         'glow-success': '0 0 30px rgba(16, 185, 129, 0.3)',
-        'card': '0 8px 32px rgba(0, 0, 0, 0.4)',
-        'card-hover': '0 12px 48px rgba(0, 0, 0, 0.6)',
-        'glass-inset': 'inset 0 1px 1px rgba(255, 255, 255, 0.1)',
+        'card': '0 8px 32px rgba(0, 0, 0, 0.45)',
+        'card-hover': '0 12px 48px rgba(0, 0, 0, 0.65)',
+        'glass-inset': 'inset 0 1px 1px rgba(255, 255, 255, 0.12)',
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

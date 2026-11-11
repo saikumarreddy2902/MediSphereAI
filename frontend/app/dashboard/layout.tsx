@@ -178,7 +178,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isDark = theme === 'dark'
 
   return (
-    <div className={`flex h-screen overflow-hidden dashboard-layout ${theme}`} style={{ background: isDark ? '#0f0f18' : '#f8fafc' }}>
+    <div className={`flex h-screen overflow-hidden dashboard-layout ${theme}`} style={{ background: isDark ? '#0a0f1d' : '#f8fafc' }}>
 
       {/* ─── Mobile Overlay ───────────────────────────────────────────────── */}
       <div
@@ -202,15 +202,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className={`sidebar flex flex-col transition-all duration-300 relative z-20 ${mobileOpen ? 'sidebar-open' : ''}`}
         style={{
           width: collapsed ? '72px' : '260px',
-          background: isDark ? 'rgba(13, 13, 22, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-          borderRight: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.08)',
+          background: isDark ? 'rgba(12, 19, 34, 0.96)' : 'rgba(255, 255, 255, 0.96)',
+          borderRight: isDark ? '1px solid rgba(56, 189, 248, 0.12)' : '1px solid rgba(0,0,0,0.08)',
           backdropFilter: 'blur(20px)',
         }}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-5 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)' }}>
+        <div className="flex items-center gap-3 px-4 py-5 border-b" style={{ borderColor: isDark ? 'rgba(56, 189, 248, 0.1)' : 'rgba(0,0,0,0.06)' }}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-               style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
+               style={{ background: 'linear-gradient(135deg, #0ea5e9, #6366f1)', boxShadow: '0 4px 14px rgba(14,165,233,0.35)' }}>
             <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
               <path d="M16 4L28 10V22L16 28L4 22V10L16 4Z" stroke="white" strokeWidth="2" fill="none"/>
               <circle cx="16" cy="16" r="4" fill="white"/>
@@ -225,7 +225,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             id="sidebar-toggle"
             onClick={() => setCollapsed(!collapsed)}
             className="ml-auto p-1.5 rounded-lg transition-colors flex-shrink-0 hover:bg-white/5"
-            style={{ color: isDark ? '#475569' : '#64748b' }}
+            style={{ color: isDark ? '#94a3b8' : '#64748b' }}
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -233,16 +233,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Live Stats */}
         {!collapsed && (
-          <div className="px-4 py-3 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)' }}>
+          <div className="px-4 py-3 border-b" style={{ borderColor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(0,0,0,0.06)' }}>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: 'Patients', value: '342', color: '#6366f1' },
+                { label: 'Patients', value: '342', color: '#0ea5e9' },
                 { label: 'Beds',     value: '84%', color: '#10b981' },
                 { label: 'Alerts',   value: '11',  color: '#ef4444' },
               ].map(s => (
-                <div key={s.label} className="text-center p-2 rounded-lg" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
+                <div key={s.label} className="text-center p-2 rounded-lg"
+                     style={{
+                       background: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(0,0,0,0.03)',
+                       border: isDark ? '1px solid rgba(56, 189, 248, 0.1)' : '1px solid rgba(0,0,0,0.05)'
+                     }}>
                   <div className="text-lg font-bold" style={{ color: s.color }}>{s.value}</div>
-                  <div className="text-xs" style={{ color: isDark ? '#475569' : '#64748b' }}>{s.label}</div>
+                  <div className="text-xs" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -338,19 +342,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Top Bar */}
         <header className="flex items-center justify-between px-6 py-3 flex-shrink-0"
                 style={{
-                  background: isDark ? 'rgba(13,13,22,0.8)' : 'rgba(255,255,255,0.8)',
-                  borderBottom: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.08)',
-                  backdropFilter: 'blur(12px)'
+                  background: isDark ? 'rgba(12, 19, 34, 0.88)' : 'rgba(255, 255, 255, 0.88)',
+                  borderBottom: isDark ? '1px solid rgba(56, 189, 248, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)',
+                  backdropFilter: 'blur(16px)'
                 }}>
           <div>
-            <h1 className="text-base font-semibold" style={{ color: isDark ? '#e2e8f0' : '#0f172a' }}>
+            <h1 className="text-base font-semibold" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>
               {pathname === '/dashboard' ? (
                 user?.role === 'doctor' ? 'Doctor Workstation' :
                 user?.role === 'nurse' ? 'Nurse Operations Station' :
                 user?.role === 'patient' ? 'Patient Health Portal' : 'Executive Overview'
               ) : (NAV_ITEMS.find(n => n.href === pathname)?.label || 'Dashboard')}
             </h1>
-            <p suppressHydrationWarning className="text-xs" style={{ color: isDark ? '#475569' : '#64748b' }}>
+            <p suppressHydrationWarning className="text-xs" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>
               Last updated: {mounted ? time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '...'}
             </p>
           </div>
@@ -359,8 +363,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Quick RBAC Role Switcher */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs"
                  style={{
-                   background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-                   border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                   background: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(0, 0, 0, 0.05)',
+                   border: isDark ? '1px solid rgba(56, 189, 248, 0.15)' : '1px solid rgba(0, 0, 0, 0.1)',
                  }}>
               <span className="text-[11px] font-medium hidden sm:inline" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>
                 Role:
@@ -374,32 +378,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   color: user?.role === 'patient' ? '#ec4899' :
                          user?.role === 'doctor' ? '#10b981' :
                          user?.role === 'nurse' ? '#f59e0b' :
-                         (isDark ? '#818cf8' : '#4f46e5')
+                         (isDark ? '#38bdf8' : '#0284c7')
                 }}
               >
-                <option value="admin" style={{ background: '#13131e', color: '#e2e8f0' }}>👑 Hospital Admin</option>
-                <option value="doctor" style={{ background: '#13131e', color: '#e2e8f0' }}>🩺 Doctor (Dr. Priya)</option>
-                <option value="nurse" style={{ background: '#13131e', color: '#e2e8f0' }}>🏥 Nurse (Operations)</option>
-                <option value="patient" style={{ background: '#13131e', color: '#ec4899' }}>👤 Patient (Rajesh Kumar)</option>
+                <option value="admin" style={{ background: '#0f172a', color: '#f8fafc' }}>👑 Hospital Admin</option>
+                <option value="doctor" style={{ background: '#0f172a', color: '#f8fafc' }}>🩺 Doctor (Dr. Priya)</option>
+                <option value="nurse" style={{ background: '#0f172a', color: '#f8fafc' }}>🏥 Nurse (Operations)</option>
+                <option value="patient" style={{ background: '#0f172a', color: '#ec4899' }}>👤 Patient (Rajesh Kumar)</option>
               </select>
             </div>
             {/* Dark / Light Theme Toggle Button */}
             <button
               id="theme-toggle-btn"
               onClick={toggleTheme}
-              aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label={isDark ? 'Switch to Clinical Light' : 'Switch to Clinical Dark'}
+              title={isDark ? 'Switch to Clinical Light' : 'Switch to Clinical Dark'}
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-300 hover:scale-105"
               style={{
-                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                color: isDark ? '#fbbf24' : '#6366f1',
-                boxShadow: isDark ? '0 0 12px rgba(251,191,36,0.15)' : '0 0 12px rgba(99,102,241,0.15)'
+                background: isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(0, 0, 0, 0.06)',
+                border: isDark ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid rgba(14, 165, 233, 0.2)',
+                color: isDark ? '#38bdf8' : '#0284c7',
+                boxShadow: isDark ? '0 0 12px rgba(14, 165, 233, 0.15)' : '0 0 12px rgba(14, 165, 233, 0.12)'
               }}
             >
-              {isDark ? <Sun size={18} className="text-amber-400 animate-spin-slow" /> : <Moon size={18} className="text-indigo-600" />}
-              <span className="text-xs font-semibold hidden sm:inline" style={{ color: isDark ? '#e2e8f0' : '#0f172a' }}>
-                {isDark ? 'Light Mode' : 'Dark Mode'}
+              {isDark ? <Sun size={18} className="text-amber-400 animate-spin-slow" /> : <Moon size={18} className="text-sky-600" />}
+              <span className="text-xs font-semibold hidden sm:inline" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>
+                {isDark ? 'Clinical Light' : 'Clinical Dark'}
               </span>
             </button>
 
